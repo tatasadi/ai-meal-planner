@@ -1,5 +1,11 @@
 # AI Meal Planner - Project Documentation
 
+## IMPORTANT: Development Environment Constraints
+
+**CRITICAL**: This development environment cannot execute Bash or PowerShell commands. Always ask the user to run terminal commands manually. Never attempt to use the Bash tool for installations, builds, or system commands.
+
+**PACKAGE MANAGER**: This project uses pnpm. Always use pnpm commands (not npm or yarn).
+
 ## Project Overview
 
 A web application that uses generative AI to help users create personalized meal plans based on their health data. This is an MVP focused on core functionality.
