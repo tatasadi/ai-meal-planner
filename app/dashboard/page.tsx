@@ -5,6 +5,7 @@ import { MealCard } from "@/src/components/meal/meal-card"
 import { ChatInterface } from "@/src/components/chat/chat-interface"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RefreshCw } from "lucide-react"
 import type { Meal, ChatMessage } from "@/src/lib/types"
 
 // Mock data for demonstration
@@ -88,35 +89,66 @@ export default function DashboardPage() {
   }, {} as Record<string, Meal[]>)
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Your Meal Plan</h1>
-          <p className="text-muted-foreground">Personalized 3-day meal plan based on your profile</p>
+    <div className="min-h-screen gradient-bg">
+      <div className="max-w-7xl mx-auto p-6">
+        <header className="mb-12 animate-fade-in">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Your Meal Plan
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Personalized 3-day meal plan based on your profile
+              </p>
+            </div>
+            
+            <Button 
+              onClick={handleRegenerateAll} 
+              disabled={isGenerating}
+              size="lg"
+              className="shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate All
+                </>
+              )}
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Meals</h2>
-              <Button onClick={handleRegenerateAll} disabled={isGenerating}>
-                {isGenerating ? "Generating..." : "Regenerate All Meals"}
-              </Button>
-            </div>
-
-            {Object.entries(groupedMeals).map(([day, dayMeals]) => (
-              <Card key={day}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{day}</CardTitle>
+          <div className="lg:col-span-2 space-y-8 animate-slide-up">
+            {Object.entries(groupedMeals).map(([day, dayMeals], dayIndex) => (
+              <Card key={day} className="card-elevated border-0 shadow-xl" style={{ animationDelay: `${dayIndex * 100}ms` }}>
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">{dayIndex + 1}</span>
+                    </div>
+                    {day}
+                  </CardTitle>
+                  <p className="text-muted-foreground">Your personalized meals for the day</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {dayMeals.map((meal) => (
-                      <MealCard
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {dayMeals.map((meal, mealIndex) => (
+                      <div 
                         key={meal.id}
-                        meal={meal}
-                        onRegenerate={() => handleRegenerateMeal(meal.id)}
-                      />
+                        className="animate-scale-in"
+                        style={{ animationDelay: `${(dayIndex * 3 + mealIndex) * 100}ms` }}
+                      >
+                        <MealCard
+                          meal={meal}
+                          onRegenerate={() => handleRegenerateMeal(meal.id)}
+                        />
+                      </div>
                     ))}
                   </div>
                 </CardContent>
@@ -124,31 +156,50 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <div className="space-y-6">
-            <ChatInterface
-              messages={chatMessages}
-              onSendMessage={handleSendMessage}
-              isLoading={false}
-            />
+          <div className="space-y-6 animate-slide-up" style={{ animationDelay: '300ms' }}>
+            <Card className="card-elevated border-0 shadow-xl sticky top-6">
+              <ChatInterface
+                messages={chatMessages}
+                onSendMessage={handleSendMessage}
+                isLoading={false}
+              />
+            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Grocery List</CardTitle>
+            <Card className="card-elevated border-0 shadow-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-chart-1/10 flex items-center justify-center">
+                    <span className="text-xs">🛒</span>
+                  </div>
+                  Shopping List
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Generated from your meal plan
+                </p>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Based on your 3-day meal plan
-                </p>
-                <ul className="text-sm space-y-1">
-                  <li>• Greek yogurt</li>
-                  <li>• Mixed berries</li>
-                  <li>• Chicken breast</li>
-                  <li>• Salmon fillet</li>
-                  <li>• Quinoa</li>
-                  <li>• Mixed greens</li>
-                  <li>• Broccoli & carrots</li>
-                  <li className="text-muted-foreground italic">+8 more items</li>
-                </ul>
+                <div className="space-y-3">
+                  {[
+                    "Greek yogurt",
+                    "Mixed berries", 
+                    "Chicken breast",
+                    "Salmon fillet",
+                    "Quinoa",
+                    "Mixed greens",
+                    "Broccoli & carrots"
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center gap-3 text-sm group hover:bg-white/5 p-2 rounded-lg transition-colors cursor-pointer">
+                      <div className="w-4 h-4 rounded border-2 border-primary/30 flex items-center justify-center hover:border-primary transition-colors group-hover:border-primary/50">
+                        <div className="w-2 h-2 rounded-full bg-primary/0 group-hover:bg-primary/60 transition-colors"></div>
+                      </div>
+                      <span className="text-foreground/90 group-hover:text-foreground">{item}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-4 h-4"></div>
+                    <span className="text-muted-foreground italic">+8 more items</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
