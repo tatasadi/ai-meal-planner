@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Combobox, ComboboxOption } from "@/components/ui/combobox"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const basicInfoSchema = z.object({
   age: z.number().min(13).max(120),
@@ -29,6 +31,27 @@ type PreferencesFormData = z.infer<typeof preferencesSchema>
 interface OnboardingFormProps {
   onComplete: (data: BasicInfoFormData & PreferencesFormData) => void
 }
+
+const genderOptions: ComboboxOption[] = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+]
+
+const activityLevelOptions: ComboboxOption[] = [
+  { value: "sedentary", label: "Sedentary" },
+  { value: "light", label: "Light Exercise" },
+  { value: "moderate", label: "Moderate Exercise" },
+  { value: "active", label: "Active" },
+  { value: "very_active", label: "Very Active" },
+]
+
+const goalsOptions: ComboboxOption[] = [
+  { value: "weight_loss", label: "Weight Loss" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "weight_gain", label: "Weight Gain" },
+  { value: "muscle_gain", label: "Muscle Gain" },
+]
 
 export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [step, setStep] = useState(1)
@@ -69,7 +92,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
         </CardHeader>
         <CardContent>
           <form onSubmit={basicForm.handleSubmit(onBasicInfoSubmit)} className="space-y-4">
-            <div>
+            <div className="form-group">
               <Label htmlFor="age">Age</Label>
               <Input
                 id="age"
@@ -81,24 +104,26 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               )}
             </div>
 
-            <div>
+            <div className="form-group">
               <Label htmlFor="gender">Gender</Label>
-              <select
-                id="gender"
-                className="w-full rounded-md border border-input bg-background px-3 py-2"
-                {...basicForm.register("gender")}
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+              <Controller
+                name="gender"
+                control={basicForm.control}
+                render={({ field }) => (
+                  <Combobox
+                    options={genderOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select gender"
+                  />
+                )}
+              />
               {basicForm.formState.errors.gender && (
                 <p className="text-sm text-destructive">{basicForm.formState.errors.gender.message}</p>
               )}
             </div>
 
-            <div>
+            <div className="form-group">
               <Label htmlFor="height">Height (cm)</Label>
               <Input
                 id="height"
@@ -110,7 +135,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               )}
             </div>
 
-            <div>
+            <div className="form-group">
               <Label htmlFor="weight">Weight (kg)</Label>
               <Input
                 id="weight"
@@ -122,20 +147,20 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               )}
             </div>
 
-            <div>
+            <div className="form-group">
               <Label htmlFor="activityLevel">Activity Level</Label>
-              <select
-                id="activityLevel"
-                className="w-full rounded-md border border-input bg-background px-3 py-2"
-                {...basicForm.register("activityLevel")}
-              >
-                <option value="">Select activity level</option>
-                <option value="sedentary">Sedentary</option>
-                <option value="light">Light Exercise</option>
-                <option value="moderate">Moderate Exercise</option>
-                <option value="active">Active</option>
-                <option value="very_active">Very Active</option>
-              </select>
+              <Controller
+                name="activityLevel"
+                control={basicForm.control}
+                render={({ field }) => (
+                  <Combobox
+                    options={activityLevelOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select activity level"
+                  />
+                )}
+              />
               {basicForm.formState.errors.activityLevel && (
                 <p className="text-sm text-destructive">{basicForm.formState.errors.activityLevel.message}</p>
               )}
@@ -157,42 +182,62 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={preferencesForm.handleSubmit(onPreferencesSubmit)} className="space-y-4">
-          <div>
+          <div className="form-group">
             <Label htmlFor="goals">Goal</Label>
-            <select
-              id="goals"
-              className="w-full rounded-md border border-input bg-background px-3 py-2"
-              {...preferencesForm.register("goals")}
-            >
-              <option value="">Select your goal</option>
-              <option value="weight_loss">Weight Loss</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="weight_gain">Weight Gain</option>
-              <option value="muscle_gain">Muscle Gain</option>
-            </select>
+            <Controller
+              name="goals"
+              control={preferencesForm.control}
+              render={({ field }) => (
+                <Combobox
+                  options={goalsOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select your goal"
+                />
+              )}
+            />
             {preferencesForm.formState.errors.goals && (
               <p className="text-sm text-destructive">{preferencesForm.formState.errors.goals.message}</p>
             )}
           </div>
 
-          <div>
+          <div className="form-group">
             <Label>Dietary Restrictions</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-4 mt-2">
               {["vegetarian", "gluten-free"].map((restriction) => (
-                <label key={restriction} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    value={restriction}
-                    {...preferencesForm.register("dietaryRestrictions")}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm capitalize">{restriction.replace("-", " ")}</span>
-                </label>
+                <Controller
+                  key={restriction}
+                  name="dietaryRestrictions"
+                  control={preferencesForm.control}
+                  render={({ field }) => (
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id={restriction}
+                        checked={field.value?.includes(restriction)}
+                        onCheckedChange={(checked) => {
+                          const currentValue = field.value || []
+                          if (checked) {
+                            field.onChange([...currentValue, restriction])
+                          } else {
+                            field.onChange(currentValue.filter((value: string) => value !== restriction))
+                          }
+                        }}
+                        className="mt-0.5"
+                      />
+                      <Label 
+                        htmlFor={restriction} 
+                        className="text-sm capitalize cursor-pointer leading-5 mb-0"
+                      >
+                        {restriction.replace("-", " ")}
+                      </Label>
+                    </div>
+                  )}
+                />
               ))}
             </div>
           </div>
 
-          <div>
+          <div className="form-group">
             <Label htmlFor="dislikedFoods">Foods you dislike</Label>
             <Input
               id="dislikedFoods"

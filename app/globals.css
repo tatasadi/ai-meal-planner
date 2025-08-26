@@ -152,35 +152,13 @@
         oklch(0.14 0.06 220) 70%,
         oklch(0.20 0.08 200) 85%,
         oklch(0.17 0.07 300) 100%
-      );
-    position: relative;
-    min-height: 100vh;
-  }
-
-  .gradient-bg::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: 
+      ),
       radial-gradient(1400px circle at 20% 10%, oklch(0.3 0.15 340 / 0.25) 0%, transparent 35%),
       radial-gradient(1000px circle at 80% 20%, oklch(0.28 0.12 280 / 0.2) 0%, transparent 40%),
       radial-gradient(800px circle at 60% 90%, oklch(0.32 0.1 200 / 0.18) 0%, transparent 45%),
       radial-gradient(1200px circle at 10% 80%, oklch(0.35 0.08 160 / 0.15) 0%, transparent 50%),
       radial-gradient(900px circle at 90% 70%, oklch(0.25 0.14 320 / 0.12) 0%, transparent 55%);
-    pointer-events: none;
-    animation: gradientShift 20s ease-in-out infinite;
-  }
-
-  .gradient-bg::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: 
-      linear-gradient(45deg, transparent 0%, oklch(0.22 0.06 280 / 0.08) 25%, transparent 50%, oklch(0.24 0.04 240 / 0.06) 75%, transparent 100%),
-      linear-gradient(-45deg, transparent 20%, oklch(0.26 0.05 320 / 0.04) 40%, transparent 60%),
-      conic-gradient(from 0deg at 50% 50%, transparent 0%, oklch(0.2 0.04 300 / 0.03) 90deg, transparent 180deg, oklch(0.18 0.05 260 / 0.02) 270deg, transparent 360deg);
-    pointer-events: none;
-    animation: gradientRotate 30s linear infinite;
+    min-height: 100vh;
   }
 
   .gradient-mesh {
@@ -331,30 +309,3 @@
   }
 }
 
-@keyframes gradientShift {
-  0%, 100% {
-    transform: translateX(0) translateY(0) scale(1);
-    opacity: 1;
-  }
-  25% {
-    transform: translateX(-10px) translateY(-20px) scale(1.05);
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateX(15px) translateY(10px) scale(0.95);
-    opacity: 0.9;
-  }
-  75% {
-    transform: translateX(-5px) translateY(15px) scale(1.02);
-    opacity: 0.7;
-  }
-}
-
-@keyframes gradientRotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
