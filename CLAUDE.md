@@ -71,10 +71,9 @@ A web application that uses generative AI to help users create personalized meal
 ### Development Tools
 
 - **Package Manager**: pnpm (preferred) or npm
-- **Code Quality**: ESLint + Prettier
+- **Code Quality**: ESLint + Prettier (manual execution)
 - **Testing**: Vitest + React Testing Library
 - **Type Checking**: TypeScript strict mode
-- **Git Hooks**: Husky + lint-staged
 - **Environment Management**: dotenv
 - **Infrastructure as Code**: Azure Bicep templates for resource provisioning
 
@@ -83,7 +82,7 @@ A web application that uses generative AI to help users create personalized meal
 ### Phase 1: Foundation
 
 1. Set up Next.js project with TypeScript
-2. Configure development tools (ESLint, Prettier, Husky)
+2. Configure development tools (ESLint, Prettier)
 3. Install and configure shadcn/ui + required libraries
 4. Set up testing framework (Vitest + RTL)
 5. Create basic UI components (forms, meal cards, chat interface)
@@ -347,8 +346,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "test:coverage": "vitest --coverage",
-    "prepare": "husky install"
+    "test:coverage": "vitest --coverage"
   }
 }
 ```
