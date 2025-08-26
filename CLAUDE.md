@@ -5,26 +5,26 @@ A web application that uses generative AI to help users create personalized meal
 
 ## Core Features
 
-### MVP Features
-- **Health Profile Setup**: Age, weight, height, dietary restrictions/preferences
-- **AI Meal Generation**: Generate 3-7 day meal plans based on health data
+### MVP Features (Simplified)
+- **Health Profile Setup**: Age, weight, height, basic dietary restrictions (vegetarian, gluten-free only)
+- **AI Meal Generation**: Generate 3-day meal plans (breakfast, lunch, dinner only)
 - **Meal Display**: Simple cards showing meals with ingredients
-- **Chat Interface**: Conversational refinement of meal plans
-- **Regeneration Options**: Regenerate individual meals or entire plans
+- **Chat Interface**: Basic meal refinement ("make this lighter", "I don't like X")
+- **Plan Regeneration**: Regenerate entire meal plan only
 - **Basic Grocery List**: Generated from meal plan
 
-### User Flow
-1. Simple onboarding form (2-3 screens max)
-2. Generate initial meal plan
-3. **Chat interface** to refine/adjust meals ("Make dinner lighter", "I don't like salmon")
-4. Iterative improvements through conversation
-5. Final meal plan + grocery list
+### User Flow (Simplified)
+1. Simple onboarding form (2 screens max)
+2. Generate initial 3-day meal plan
+3. **Basic chat** to refine meals ("Make this lighter", "I don't like salmon")
+4. Regenerate entire plan if needed
+5. View final meal plan + grocery list
 
 ### Health Data Inputs (Minimal)
 - Basic demographics (age, gender, activity level)
-- Dietary restrictions (vegetarian, gluten-free, etc.)
+- Dietary restrictions (vegetarian, gluten-free only)
 - Simple goals (weight loss, maintenance, muscle gain)
-- Food allergies/dislikes
+- Basic food dislikes (free text)
 
 ## Technology Stack
 
@@ -62,6 +62,7 @@ A web application that uses generative AI to help users create personalized meal
 - **Type Checking**: TypeScript strict mode
 - **Git Hooks**: Husky + lint-staged
 - **Environment Management**: dotenv
+- **Infrastructure as Code**: Azure Bicep templates for resource provisioning
 
 ## Implementation Roadmap
 
@@ -92,14 +93,15 @@ A web application that uses generative AI to help users create personalized meal
 20. Add unit and integration tests
 
 ### Phase 4: Production Ready
-21. Set up Azure authentication with security headers
-22. Configure Cosmos DB for data persistence
-23. Implement user profile management
-24. Set up CI/CD pipeline with automated testing
-25. Configure Application Insights monitoring
-26. Implement backup and recovery strategy
-27. Deploy to Azure Static Web Apps with staging environment
-28. Performance optimization and accessibility audit
+21. Create Azure Bicep templates for infrastructure provisioning
+22. Set up Azure authentication with security headers
+23. Configure Cosmos DB for data persistence
+24. Implement user profile management
+25. Set up CI/CD pipeline with automated testing
+26. Configure Application Insights monitoring
+27. Implement backup and recovery strategy
+28. Deploy to Azure Static Web Apps with staging environment
+29. Performance optimization and accessibility audit
 
 ## Data Models
 
@@ -139,13 +141,12 @@ interface MealPlan {
 interface Meal {
   id: string;
   day: number;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  type: 'breakfast' | 'lunch' | 'dinner';
   name: string;
   description: string;
   ingredients: string[];
   estimatedCalories: number;
   prepTime: number; // minutes
-  tags: string[];
 }
 ```
 
@@ -200,7 +201,7 @@ const UserProfileSchema = z.object({
 });
 
 const MealPlanRequestSchema = z.object({
-  duration: z.number().min(1).max(14),
+  duration: z.number().min(3).max(3), // Fixed to 3 days for MVP
   userProfile: UserProfileSchema
 });
 ```
@@ -239,18 +240,17 @@ REDIS_CONNECTION_STRING= # Optional for caching
 
 ## Chat Features Specification
 
-### Chat Capabilities
-- **Meal Refinement**: "Make dinner lighter" or "Replace salmon with chicken"
-- **Dietary Adjustments**: "I'm allergic to nuts" or "Make it more vegetarian"
-- **Quick Questions**: "How many calories is this?" or "Can I meal prep this?"
-- **Regeneration**: "Give me a different breakfast option"
+### Chat Capabilities (Simplified)
+- **Basic Meal Refinement**: "Make this lighter" or "I don't like salmon"
+- **Simple Dietary Adjustments**: "Make it vegetarian" or "Remove gluten"
+- **Plan Regeneration**: "Generate a new meal plan"
 - **Context Awareness**: AI remembers current meal plan and user preferences
 
-### Chat Implementation
-- Real-time streaming responses using Vercel AI SDK
+### Chat Implementation (Simplified)
+- Basic streaming responses using Vercel AI SDK
 - Context-aware conversations that reference current meal plan
-- Action-oriented responses that trigger meal plan updates
-- History persistence for each meal plan session
+- Simple responses that trigger full meal plan regeneration
+- Basic chat history for current session only
 
 ## Next Steps
 1. Start fresh chat session for Phase 1 implementation
