@@ -1,11 +1,13 @@
 # AI Meal Planner - Project Documentation
 
 ## Project Overview
+
 A web application that uses generative AI to help users create personalized meal plans based on their health data. This is an MVP focused on core functionality.
 
 ## Core Features
 
 ### MVP Features (Simplified)
+
 - **Health Profile Setup**: Age, weight, height, basic dietary restrictions (vegetarian, gluten-free only)
 - **AI Meal Generation**: Generate 3-day meal plans (breakfast, lunch, dinner only)
 - **Meal Display**: Simple cards showing meals with ingredients
@@ -14,6 +16,7 @@ A web application that uses generative AI to help users create personalized meal
 - **Basic Grocery List**: Generated from meal plan
 
 ### User Flow (Simplified)
+
 1. Simple onboarding form (2 screens max)
 2. Generate initial 3-day meal plan
 3. **Basic chat** to refine meals ("Make this lighter", "I don't like salmon")
@@ -21,6 +24,7 @@ A web application that uses generative AI to help users create personalized meal
 5. View final meal plan + grocery list
 
 ### Health Data Inputs (Minimal)
+
 - Basic demographics (age, gender, activity level)
 - Dietary restrictions (vegetarian, gluten-free only)
 - Simple goals (weight loss, maintenance, muscle gain)
@@ -29,6 +33,7 @@ A web application that uses generative AI to help users create personalized meal
 ## Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 with TypeScript
 - **UI Components**: shadcn/ui
 - **Styling**: Tailwind CSS
@@ -41,6 +46,7 @@ A web application that uses generative AI to help users create personalized meal
 - **Notifications**: React Hot Toast for success/error messages
 
 ### Backend & Azure Services
+
 - **Hosting**: Azure Static Web Apps
 - **Database**: Azure Cosmos DB (NoSQL) with indexing on userId, mealPlanId
 - **API**: Azure Functions (serverless)
@@ -51,11 +57,13 @@ A web application that uses generative AI to help users create personalized meal
 - **Storage**: Azure Storage (if needed for file uploads)
 
 ### Azure Integration Libraries
+
 - **Authentication**: @azure/msal-react
 - **Database**: @azure/cosmos
 - **HTTP Client**: Axios or fetch with React Query
 
 ### Development Tools
+
 - **Package Manager**: pnpm (preferred) or npm
 - **Code Quality**: ESLint + Prettier
 - **Testing**: Vitest + React Testing Library
@@ -67,6 +75,7 @@ A web application that uses generative AI to help users create personalized meal
 ## Implementation Roadmap
 
 ### Phase 1: Foundation
+
 1. Set up Next.js project with TypeScript
 2. Configure development tools (ESLint, Prettier, Husky)
 3. Install and configure shadcn/ui + required libraries
@@ -77,6 +86,7 @@ A web application that uses generative AI to help users create personalized meal
 8. Implement error boundaries and loading states
 
 ### Phase 2: Core Features
+
 9. Integrate Azure OpenAI for meal generation
 10. Implement user onboarding flow with forms (Zod validation)
 11. Build meal plan generation and display
@@ -85,6 +95,7 @@ A web application that uses generative AI to help users create personalized meal
 14. Implement caching strategy for meal plans
 
 ### Phase 3: Interactive Features
+
 15. Add chat interface for meal refinement
 16. Implement streaming AI responses with error handling
 17. Build meal plan modification logic
@@ -93,6 +104,7 @@ A web application that uses generative AI to help users create personalized meal
 20. Add unit and integration tests
 
 ### Phase 4: Production Ready
+
 21. Create Azure Bicep templates for infrastructure provisioning
 22. Set up Azure authentication with security headers
 23. Configure Cosmos DB for data persistence
@@ -106,107 +118,119 @@ A web application that uses generative AI to help users create personalized meal
 ## Data Models
 
 ### User Profile
+
 ```typescript
 interface UserProfile {
-  id: string;
-  email: string;
-  age: number;
-  gender: 'male' | 'female' | 'other';
-  height: number; // cm
-  weight: number; // kg
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  dietaryRestrictions: string[];
-  allergies: string[];
-  goals: 'weight_loss' | 'maintenance' | 'weight_gain' | 'muscle_gain';
+  id: string
+  email: string
+  age: number
+  gender: "male" | "female" | "other"
+  height: number // cm
+  weight: number // kg
+  activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active"
+  dietaryRestrictions: string[]
+  allergies: string[]
+  goals: "weight_loss" | "maintenance" | "weight_gain" | "muscle_gain"
   preferences: {
-    cuisineTypes: string[];
-    dislikedFoods: string[];
-    mealComplexity: 'simple' | 'moderate' | 'complex';
-  };
+    cuisineTypes: string[]
+    dislikedFoods: string[]
+    mealComplexity: "simple" | "moderate" | "complex"
+  }
 }
 ```
 
 ### Meal Plan
+
 ```typescript
 interface MealPlan {
-  id: string;
-  userId: string;
-  title: string;
-  duration: number; // days
-  meals: Meal[];
-  createdAt: Date;
-  updatedAt: Date;
+  id: string
+  userId: string
+  title: string
+  duration: number // days
+  meals: Meal[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 interface Meal {
-  id: string;
-  day: number;
-  type: 'breakfast' | 'lunch' | 'dinner';
-  name: string;
-  description: string;
-  ingredients: string[];
-  estimatedCalories: number;
-  prepTime: number; // minutes
+  id: string
+  day: number
+  type: "breakfast" | "lunch" | "dinner"
+  name: string
+  description: string
+  ingredients: string[]
+  estimatedCalories: number
+  prepTime: number // minutes
 }
 ```
 
 ### Chat Message
+
 ```typescript
 interface ChatMessage {
-  id: string;
-  userId: string;
-  mealPlanId: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
+  id: string
+  userId: string
+  mealPlanId: string
+  role: "user" | "assistant"
+  content: string
+  timestamp: Date
   metadata?: {
-    actionTaken?: string; // 'regenerate_meal', 'modify_plan', etc.
-    affectedMeals?: string[];
-  };
+    actionTaken?: string // 'regenerate_meal', 'modify_plan', etc.
+    affectedMeals?: string[]
+  }
 }
 ```
 
 ### Grocery List
+
 ```typescript
 interface GroceryList {
-  id: string;
-  userId: string;
-  mealPlanId: string;
-  items: GroceryItem[];
-  createdAt: Date;
-  updatedAt: Date;
+  id: string
+  userId: string
+  mealPlanId: string
+  items: GroceryItem[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 interface GroceryItem {
-  id: string;
-  name: string;
-  quantity: string;
-  category: 'produce' | 'protein' | 'dairy' | 'pantry' | 'spices' | 'other';
-  checked: boolean;
+  id: string
+  name: string
+  quantity: string
+  category: "produce" | "protein" | "dairy" | "pantry" | "spices" | "other"
+  checked: boolean
 }
 ```
 
 ### Validation Schemas
+
 ```typescript
 // Zod schemas for runtime validation
 const UserProfileSchema = z.object({
   age: z.number().min(13).max(120),
-  gender: z.enum(['male', 'female', 'other']),
+  gender: z.enum(["male", "female", "other"]),
   height: z.number().min(100).max(250), // cm
   weight: z.number().min(30).max(300), // kg
-  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
+  activityLevel: z.enum([
+    "sedentary",
+    "light",
+    "moderate",
+    "active",
+    "very_active",
+  ]),
   dietaryRestrictions: z.array(z.string()),
   allergies: z.array(z.string()),
-  goals: z.enum(['weight_loss', 'maintenance', 'weight_gain', 'muscle_gain'])
-});
+  goals: z.enum(["weight_loss", "maintenance", "weight_gain", "muscle_gain"]),
+})
 
 const MealPlanRequestSchema = z.object({
   duration: z.number().min(3).max(3), // Fixed to 3 days for MVP
-  userProfile: UserProfileSchema
-});
+  userProfile: UserProfileSchema,
+})
 ```
 
 ## Environment Variables Needed
+
 ```
 # Azure OpenAI
 AZURE_OPENAI_ENDPOINT=
@@ -241,18 +265,21 @@ REDIS_CONNECTION_STRING= # Optional for caching
 ## Chat Features Specification
 
 ### Chat Capabilities (Simplified)
+
 - **Basic Meal Refinement**: "Make this lighter" or "I don't like salmon"
 - **Simple Dietary Adjustments**: "Make it vegetarian" or "Remove gluten"
 - **Plan Regeneration**: "Generate a new meal plan"
 - **Context Awareness**: AI remembers current meal plan and user preferences
 
 ### Chat Implementation (Simplified)
+
 - Basic streaming responses using Vercel AI SDK
 - Context-aware conversations that reference current meal plan
 - Simple responses that trigger full meal plan regeneration
 - Basic chat history for current session only
 
 ## Next Steps
+
 1. Start fresh chat session for Phase 1 implementation
 2. Reference this document for architecture decisions
 3. Update this file as new decisions are made during development
@@ -260,6 +287,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 ## Security & Production Considerations
 
 ### Error Handling Strategy
+
 - **Global Error Boundary**: Catch React component errors
 - **API Error Handling**: Standardized error responses with proper HTTP codes
 - **User-Friendly Messages**: Convert technical errors to user-readable messages
@@ -267,6 +295,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 - **Retry Logic**: Exponential backoff for transient failures
 
 ### Performance & UX
+
 - **Loading States**: Skeleton loaders for all async operations
 - **Optimistic Updates**: Immediate UI feedback for user actions
 - **Image Optimization**: Next.js Image component for meal photos
@@ -275,6 +304,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 - **Mobile First**: Responsive design with touch-friendly interactions
 
 ### Security Measures
+
 - **Input Validation**: Zod schemas for all forms and API inputs
 - **Sanitization**: DOMPurify for user-generated content
 - **Rate Limiting**: Prevent API abuse
@@ -283,6 +313,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 - **Secret Management**: Azure Key Vault integration
 
 ### Monitoring & Analytics
+
 - **Application Insights**: Performance and error tracking
 - **Custom Telemetry**: User flow and feature usage
 - **Cost Monitoring**: Azure OpenAI usage tracking
@@ -290,6 +321,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 - **Alerts**: Proactive issue detection
 
 ### Testing Strategy
+
 - **Unit Tests**: Components and utility functions
 - **Integration Tests**: API routes and database operations
 - **E2E Tests**: Critical user flows (Playwright)
@@ -297,6 +329,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 - **Performance Tests**: Core Web Vitals monitoring
 
 ## Development Scripts
+
 ```json
 {
   "scripts": {
@@ -315,6 +348,7 @@ REDIS_CONNECTION_STRING= # Optional for caching
 ```
 
 ## Notes
+
 - Focus on MVP - avoid feature creep
 - Prioritize user experience over complex features
 - Ensure type safety throughout the application
