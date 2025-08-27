@@ -5,7 +5,7 @@ const requiredEnvVars = {
   endpoint: process.env.AZURE_OPENAI_ENDPOINT,
   apiKey: process.env.AZURE_OPENAI_API_KEY,
   deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-  apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2024-02-01",
+  apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2025-01-01-preview",
 } as const
 
 // Check for missing environment variables
@@ -20,15 +20,16 @@ if (missingVars.length > 0) {
   )
 }
 
-// Create Azure OpenAI client
+// Create Azure OpenAI client with correct configuration for Azure
+// The key is to NOT include the deployment name or chat/completions in the baseURL
 export const azure = createOpenAI({
-  baseURL: `${requiredEnvVars.endpoint}openai/deployments/${requiredEnvVars.deploymentName}`,
+  baseURL: `${requiredEnvVars.endpoint.replace(/\/$/, '')}/openai/deployments/${requiredEnvVars.deploymentName}`,
   apiKey: requiredEnvVars.apiKey,
-  apiVersion: requiredEnvVars.apiVersion,
+  defaultQuery: { 'api-version': requiredEnvVars.apiVersion },
 })
 
-// Export the model for use in API routes
-export const model = azure(requiredEnvVars.deploymentName!)
+// Export the model - for Azure, we don't use the deployment name as model ID, use empty string
+export const model = azure('')
 
 // Configuration constants
 export const AZURE_CONFIG = {

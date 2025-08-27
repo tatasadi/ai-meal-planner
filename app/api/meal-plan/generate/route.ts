@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { generateMealPlan } from "@/lib/meal-generation"
-import { MealPlanRequestSchema } from "@/lib/schemas"
+import { generateMealPlan } from "@/src/lib/meal-generation"
+import { MealPlanRequestSchema } from "@/src/lib/schemas"
 
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request data",
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       )
@@ -66,9 +66,16 @@ export async function POST(request: NextRequest) {
     
     // Generate a temporary user ID for now (in production, get from auth)
     const userId = `temp-user-${Date.now()}`
+    
+    // Create a complete UserProfile with required fields
+    const completeProfile = {
+      id: userId,
+      email: 'temp@example.com',
+      ...userProfile,
+    }
 
     // Generate the meal plan
-    const mealPlan = await generateMealPlan(userProfile, userId)
+    const mealPlan = await generateMealPlan(completeProfile, userId)
 
     // Add rate limit headers
     const response = NextResponse.json(mealPlan)

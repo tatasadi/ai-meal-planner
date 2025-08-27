@@ -1,51 +1,88 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { MealCard } from "@/src/components/meal/meal-card"
 import { ChatInterface } from "@/src/components/chat/chat-interface"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, AlertCircle } from "lucide-react"
+import { useMealPlanStore } from "@/src/store"
+import { useMealGeneration } from "@/src/hooks/use-meal-generation"
+import { LoadingState } from "@/src/components/ui/loading-state"
 import type { Meal, ChatMessage } from "@/src/lib/types"
 
-// Mock data for demonstration
-const mockMeals: Meal[] = [
-  {
-    id: "1",
-    day: 1,
-    type: "breakfast",
-    name: "Greek Yogurt Parfait",
-    description: "Creamy Greek yogurt layered with fresh berries and granola",
-    ingredients: ["Greek yogurt", "Mixed berries", "Granola", "Honey", "Chia seeds"],
-    estimatedCalories: 320,
-    prepTime: 5,
-  },
-  {
-    id: "2",
-    day: 1,
-    type: "lunch",
-    name: "Grilled Chicken Salad",
-    description: "Fresh mixed greens with grilled chicken breast and balsamic vinaigrette",
-    ingredients: ["Chicken breast", "Mixed greens", "Cherry tomatoes", "Cucumber", "Balsamic vinaigrette"],
-    estimatedCalories: 450,
-    prepTime: 20,
-  },
-  {
-    id: "3",
-    day: 1,
-    type: "dinner",
-    name: "Baked Salmon with Quinoa",
-    description: "Herb-crusted salmon served with fluffy quinoa and steamed vegetables",
-    ingredients: ["Salmon fillet", "Quinoa", "Broccoli", "Carrots", "Herbs", "Olive oil"],
-    estimatedCalories: 520,
-    prepTime: 30,
-  },
-]
 
 export default function DashboardPage() {
-  const [meals, setMeals] = useState<Meal[]>(mockMeals)
+  const router = useRouter()
+  const { currentMealPlan, userProfile } = useMealPlanStore()
+  const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, isRegeneratingMeal, error } = useMealGeneration()
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [isGenerating, setIsGenerating] = useState(false)
+  
+  const handleRegenerateAll = async () => {
+    if (userProfile) {
+      await generateMealPlan(userProfile)
+    }
+  }
+
+  // Generate grocery list from meal plan
+  const generateGroceryList = () => {
+    if (!currentMealPlan) return []
+    
+    const allIngredients = currentMealPlan.meals.flatMap(meal => meal.ingredients)
+    const uniqueIngredients = Array.from(new Set(allIngredients))
+    return uniqueIngredients.slice(0, 10) // Show first 10 unique ingredients
+  }
+
+  const groceryItems = generateGroceryList()
+  
+  useEffect(() => {
+    if (!currentMealPlan && !userProfile) {
+      router.push('/onboarding')
+    }
+  }, [currentMealPlan, userProfile, router])
+  
+  if (isGeneratingMealPlan) {
+    return <LoadingState message="Generating your personalized meal plan..." />
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <Card className="card-elevated border-0 shadow-xl max-w-md">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => router.push('/onboarding')}>
+                Start Over
+              </Button>
+              <Button onClick={handleRegenerateAll}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+  
+  if (!currentMealPlan) {
+    return (
+      <div className="min-h-screen gradient-bg flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No meal plan found</h1>
+          <p className="text-muted-foreground mb-6">Let's create your personalized meal plan</p>
+          <Button onClick={() => router.push('/onboarding')}>
+            Get Started
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  
+  const meals = currentMealPlan.meals
 
   const handleSendMessage = (message: string) => {
     const userMessage: ChatMessage = {
@@ -69,16 +106,11 @@ export default function DashboardPage() {
     setChatMessages(prev => [...prev, userMessage, assistantMessage])
   }
 
-  const handleRegenerateMeal = (mealId: string) => {
-    console.log("Regenerating meal:", mealId)
-  }
-
-  const handleRegenerateAll = () => {
-    setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      console.log("All meals regenerated!")
-    }, 2000)
+  const handleRegenerateMeal = async (mealId: string) => {
+    const meal = meals.find(m => m.id === mealId)
+    if (meal) {
+      await regenerateMeal(meal)
+    }
   }
 
   const groupedMeals = meals.reduce((acc, meal) => {
@@ -104,11 +136,11 @@ export default function DashboardPage() {
             
             <Button 
               onClick={handleRegenerateAll} 
-              disabled={isGenerating}
+              disabled={isGeneratingMealPlan}
               size="lg"
               className="shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {isGenerating ? (
+              {isGeneratingMealPlan ? (
                 <>
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
                   Generating...
@@ -147,6 +179,7 @@ export default function DashboardPage() {
                         <MealCard
                           meal={meal}
                           onRegenerate={() => handleRegenerateMeal(meal.id)}
+                          isRegenerating={isRegeneratingMeal}
                         />
                       </div>
                     ))}
@@ -179,15 +212,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    "Greek yogurt",
-                    "Mixed berries", 
-                    "Chicken breast",
-                    "Salmon fillet",
-                    "Quinoa",
-                    "Mixed greens",
-                    "Broccoli & carrots"
-                  ].map((item, index) => (
+                  {groceryItems.map((item, index) => (
                     <div key={index} className="flex items-center gap-3 text-sm group hover:bg-white/5 p-2 rounded-lg transition-colors cursor-pointer">
                       <div className="w-4 h-4 rounded border-2 border-primary/30 flex items-center justify-center hover:border-primary transition-colors group-hover:border-primary/50">
                         <div className="w-2 h-2 rounded-full bg-primary/0 group-hover:bg-primary/60 transition-colors"></div>
@@ -195,10 +220,14 @@ export default function DashboardPage() {
                       <span className="text-foreground/90 group-hover:text-foreground">{item}</span>
                     </div>
                   ))}
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-4 h-4"></div>
-                    <span className="text-muted-foreground italic">+8 more items</span>
-                  </div>
+                  {currentMealPlan && currentMealPlan.meals.flatMap(m => m.ingredients).length > groceryItems.length && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-4 h-4"></div>
+                      <span className="text-muted-foreground italic">
+                        +{currentMealPlan.meals.flatMap(m => m.ingredients).length - groceryItems.length} more items
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

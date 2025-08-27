@@ -1,4 +1,4 @@
-import type { UserProfile, MealPlan, Meal } from "./types"
+import type { UserProfile, MealPlan, Meal } from "@/src/lib/types"
 
 export class APIError extends Error {
   constructor(

@@ -1,14 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Clock, Zap, RefreshCw, Utensils } from "lucide-react"
-import type { Meal } from "@/lib/types"
+import type { Meal } from "@/src/lib/types"
 
 interface MealCardProps {
   meal: Meal
   onRegenerate?: () => void
+  isRegenerating?: boolean
 }
 
-export function MealCard({ meal, onRegenerate }: MealCardProps) {
+export function MealCard({ meal, onRegenerate, isRegenerating }: MealCardProps) {
   const mealTypeConfig = {
     breakfast: {
       gradient: "meal-card-gradient-breakfast",
@@ -106,10 +107,20 @@ export function MealCard({ meal, onRegenerate }: MealCardProps) {
             variant="outline"
             size="sm"
             onClick={onRegenerate}
+            disabled={isRegenerating}
             className="w-full mt-4 h-9 text-sm hover:bg-primary hover:text-primary-foreground transition-all duration-200 group-hover:border-primary/50"
           >
-            <RefreshCw className="w-3.5 h-3.5 mr-2" />
-            Regenerate meal
+            {isRegenerating ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                Regenerating...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                Regenerate meal
+              </>
+            )}
           </Button>
         )}
       </CardContent>

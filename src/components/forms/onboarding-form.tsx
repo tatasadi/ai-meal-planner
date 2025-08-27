@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Combobox, ComboboxOption } from "@/components/ui/combobox"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useMealPlanStore } from "@/src/store"
+import { useMealGeneration } from "@/src/hooks/use-meal-generation"
+import type { UserProfile } from "@/src/lib/types"
 
 const basicInfoSchema = z.object({
   age: z.number().min(13).max(120),
@@ -29,7 +32,7 @@ type BasicInfoFormData = z.infer<typeof basicInfoSchema>
 type PreferencesFormData = z.infer<typeof preferencesSchema>
 
 interface OnboardingFormProps {
-  onComplete: (data: BasicInfoFormData & PreferencesFormData) => void
+  onComplete?: () => void
 }
 
 const genderOptions: ComboboxOption[] = [
@@ -56,6 +59,8 @@ const goalsOptions: ComboboxOption[] = [
 export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [step, setStep] = useState(1)
   const [basicInfo, setBasicInfo] = useState<BasicInfoFormData | null>(null)
+  const { setUserProfile } = useMealPlanStore()
+  const { generateMealPlan, isGeneratingMealPlan } = useMealGeneration()
 
   const basicForm = useForm<BasicInfoFormData>({
     resolver: zodResolver(basicInfoSchema),
@@ -74,13 +79,29 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     setStep(2)
   }
 
-  const onPreferencesSubmit = (data: PreferencesFormData) => {
+  const onPreferencesSubmit = async (data: PreferencesFormData) => {
     if (basicInfo) {
-      onComplete({
-        ...basicInfo,
-        ...data,
+      const userProfile: UserProfile = {
+        id: `user-${Date.now()}`,
+        email: 'temp@example.com', // TODO: Get from auth
+        age: basicInfo.age,
+        gender: basicInfo.gender,
+        height: basicInfo.height,
+        weight: basicInfo.weight,
+        activityLevel: basicInfo.activityLevel,
+        goals: data.goals,
         dietaryRestrictions: data.dietaryRestrictions.filter(Boolean),
-      })
+        allergies: [], // TODO: Add allergies field to form
+        preferences: {
+          cuisineTypes: [], // TODO: Add cuisine preferences
+          dislikedFoods: data.dislikedFoods ? data.dislikedFoods.split(',').map(s => s.trim()) : [],
+          mealComplexity: 'moderate', // TODO: Add complexity field
+        },
+      }
+      
+      setUserProfile(userProfile)
+      await generateMealPlan(userProfile)
+      onComplete?.()
     }
   }
 
@@ -250,8 +271,15 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
             <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
               Back
             </Button>
-            <Button type="submit" className="flex-1">
-              Complete
+            <Button type="submit" className="flex-1" disabled={isGeneratingMealPlan}>
+              {isGeneratingMealPlan ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  Generating Plan...
+                </>
+              ) : (
+                'Complete'
+              )}
             </Button>
           </div>
         </form>

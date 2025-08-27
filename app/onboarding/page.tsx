@@ -1,14 +1,11 @@
 "use client"
 
 import { OnboardingForm } from "@/src/components/forms/onboarding-form"
-import { useRouter } from "next/navigation"
 
 export default function OnboardingPage() {
-  const router = useRouter()
-
-  const handleComplete = (data: any) => {
-    console.log("Onboarding data:", data)
-    router.push("/dashboard")
+  const handleComplete = () => {
+    // Navigation is now handled by the meal generation hook
+    console.log("Onboarding completed successfully")
   }
 
   return (

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { regenerateMeal } from "@/lib/meal-generation"
-import { UserProfileSchema } from "@/lib/schemas"
+import { regenerateMeal } from "@/src/lib/meal-generation"
+import { UserProfileSchema } from "@/src/lib/schemas"
 
 // Schema for regenerate meal request
 const RegenerateMealSchema = z.object({
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request data",
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       )
@@ -37,8 +37,15 @@ export async function POST(request: NextRequest) {
 
     const { meal, userProfile, context } = validationResult.data
 
+    // Create a complete UserProfile with required fields
+    const completeProfile = {
+      id: 'temp-user',
+      email: 'temp@example.com',
+      ...userProfile,
+    }
+
     // Regenerate the meal
-    const newMeal = await regenerateMeal(meal, userProfile, context)
+    const newMeal = await regenerateMeal(meal, completeProfile, context)
 
     return NextResponse.json(newMeal)
 

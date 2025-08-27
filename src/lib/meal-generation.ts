@@ -1,7 +1,7 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { model } from "./azure-openai"
-import type { UserProfile, MealPlan, Meal } from "./types"
+import type { UserProfile, MealPlan, Meal } from "@/src/lib/types"
 
 // Schema for AI-generated meal plan response
 const MealPlanResponseSchema = z.object({
