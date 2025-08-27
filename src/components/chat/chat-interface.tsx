@@ -3,9 +3,9 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Send, User, Bot } from "lucide-react"
-import type { ChatMessage } from "@/lib/types"
+import type { ChatMessage } from "@/src/lib/types"
 
 interface ChatInterfaceProps {
   messages: ChatMessage[]
@@ -25,12 +25,12 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
   }
 
   return (
-    <Card className="h-96 flex flex-col">
+    <div className="h-96 flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Refine Your Meal Plan</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-2 bg-muted/20 rounded-md">
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-4 bg-muted/20 rounded-md">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm py-8">
               <Bot className="w-6 h-6 mx-auto mb-2 opacity-50" />
@@ -86,7 +86,7 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -99,6 +99,6 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
           </Button>
         </form>
       </CardContent>
-    </Card>
+    </div>
   )
 }

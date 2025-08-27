@@ -13,8 +13,8 @@ export function MealCard({ meal, onRegenerate }: MealCardProps) {
     breakfast: {
       gradient: "meal-card-gradient-breakfast",
       icon: "🌅",
-      color: "text-amber-400",
-      accentColor: "oklch(0.75 0.15 45)"
+      color: "text-pink-400",
+      accentColor: "oklch(0.75 0.18 350)"
     },
     lunch: {
       gradient: "meal-card-gradient-lunch", 
@@ -33,7 +33,7 @@ export function MealCard({ meal, onRegenerate }: MealCardProps) {
   const config = mealTypeConfig[meal.type as keyof typeof mealTypeConfig]
 
   return (
-    <Card className={`card-hover ${config.gradient} shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group border-0`}>
+    <Card className={`card-hover ${config.gradient} shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group border-0 h-full flex flex-col`}>
       <CardHeader className="pb-4 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -54,7 +54,7 @@ export function MealCard({ meal, onRegenerate }: MealCardProps) {
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 flex flex-col">
         <div className="space-y-2">
           <h3 className="font-semibold text-lg leading-tight text-white group-hover:text-white/90 transition-colors">
             {meal.name}
@@ -98,6 +98,8 @@ export function MealCard({ meal, onRegenerate }: MealCardProps) {
             )}
           </div>
         </div>
+
+        <div className="flex-1"></div>
 
         {onRegenerate && (
           <Button

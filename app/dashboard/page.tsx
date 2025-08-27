@@ -137,11 +137,11 @@ export default function DashboardPage() {
                   <p className="text-muted-foreground">Your personalized meals for the day</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
                     {dayMeals.map((meal, mealIndex) => (
                       <div 
                         key={meal.id}
-                        className="animate-scale-in"
+                        className="animate-scale-in h-full"
                         style={{ animationDelay: `${(dayIndex * 3 + mealIndex) * 100}ms` }}
                       >
                         <MealCard
@@ -157,7 +157,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-6 animate-slide-up" style={{ animationDelay: '300ms' }}>
-            <Card className="card-elevated border-0 shadow-xl sticky top-6">
+            <Card className="card-elevated border-0 shadow-xl">
               <ChatInterface
                 messages={chatMessages}
                 onSendMessage={handleSendMessage}

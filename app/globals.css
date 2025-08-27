@@ -247,11 +247,11 @@
   }
 
   .meal-card-gradient-breakfast {
-    background: linear-gradient(135deg, oklch(0.32 0.08 45) 0%, oklch(0.26 0.06 35) 100%);
-    border: 1px solid oklch(0.5 0.12 45 / 0.5);
+    background: linear-gradient(135deg, oklch(0.32 0.12 350) 0%, oklch(0.26 0.08 20) 100%);
+    border: 1px solid oklch(0.5 0.15 350 / 0.5);
     box-shadow: 
-      0 8px 32px oklch(0.08 0.02 45 / 0.3),
-      inset 0 1px 0 oklch(0.6 0.1 45 / 0.15);
+      0 8px 32px oklch(0.08 0.02 350 / 0.3),
+      inset 0 1px 0 oklch(0.6 0.1 350 / 0.15);
   }
 
   .meal-card-gradient-lunch {
