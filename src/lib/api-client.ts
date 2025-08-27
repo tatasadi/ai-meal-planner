@@ -1,0 +1,75 @@
+import type { UserProfile, MealPlan, Meal } from "./types"
+
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public details?: any
+  ) {
+    super(message)
+    this.name = "APIError"
+  }
+}
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({
+      error: "An unknown error occurred"
+    }))
+    
+    throw new APIError(
+      error.error || `HTTP ${response.status}`,
+      response.status,
+      error.details
+    )
+  }
+  
+  return response.json()
+}
+
+export const mealPlanAPI = {
+  async generateMealPlan(userProfile: UserProfile): Promise<MealPlan> {
+    const response = await fetch("/api/meal-plan/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        duration: 3, // Fixed to 3 days for MVP
+        userProfile,
+      }),
+    })
+
+    return handleResponse<MealPlan>(response)
+  },
+
+  async regenerateMeal(
+    meal: Meal,
+    userProfile: UserProfile,
+    context?: string
+  ): Promise<Meal> {
+    const response = await fetch("/api/meal-plan/regenerate-meal", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        meal,
+        userProfile,
+        context,
+      }),
+    })
+
+    return handleResponse<Meal>(response)
+  },
+}
+
+// Utility function to check if error is rate limit
+export function isRateLimitError(error: unknown): boolean {
+  return error instanceof APIError && error.status === 429
+}
+
+// Utility function to check if error is validation error
+export function isValidationError(error: unknown): boolean {
+  return error instanceof APIError && error.status === 400
+}
