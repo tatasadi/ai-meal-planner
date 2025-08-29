@@ -2,10 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { POST } from '@/app/api/meal-plan/regenerate-meal/route'
 import { NextRequest } from 'next/server'
 
+// Create mock functions that we can control
+const mockRegenerateMeal = vi.hoisted(() => vi.fn())
+const mockRegenerateShoppingList = vi.hoisted(() => vi.fn())
+
 // Mock the meal generation library
 vi.mock('@/lib/meal-generation', () => ({
-  regenerateMeal: vi.fn(),
-  regenerateShoppingList: vi.fn(),
+  regenerateMeal: mockRegenerateMeal,
+  regenerateShoppingList: mockRegenerateShoppingList,
 }))
 
 // Mock sanitization
@@ -14,14 +18,10 @@ vi.mock('@/lib/sanitization', () => ({
 }))
 
 describe('/api/meal-plan/regenerate-meal', () => {
-  const mockRegenerateMeal = vi.fn()
-  const mockRegenerateShoppingList = vi.fn()
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-    const mealGeneration = await import('@/lib/meal-generation')
-    vi.mocked(mealGeneration.regenerateMeal).mockImplementation(mockRegenerateMeal)
-    vi.mocked(mealGeneration.regenerateShoppingList).mockImplementation(mockRegenerateShoppingList)
+    mockRegenerateMeal.mockClear()
+    mockRegenerateShoppingList.mockClear()
   })
 
   afterEach(() => {

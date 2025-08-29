@@ -31,6 +31,8 @@ interface ComboboxProps {
   placeholder?: string
   className?: string
   disabled?: boolean
+  id?: string
+  "aria-labelledby"?: string
 }
 
 export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
@@ -41,6 +43,8 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
     placeholder = "Select option...",
     className,
     disabled = false,
+    id,
+    "aria-labelledby": ariaLabelledby,
   }, ref) {
   const [open, setOpen] = React.useState(false)
   const commandRef = React.useRef<HTMLDivElement>(null)
@@ -64,6 +68,8 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          id={id}
+          aria-labelledby={ariaLabelledby}
           className={cn(
             "w-full justify-between font-normal input-elevated",
             !selectedOption && "text-muted-foreground",

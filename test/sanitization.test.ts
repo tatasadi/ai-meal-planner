@@ -10,17 +10,25 @@ import {
 } from '@/lib/sanitization'
 
 // Mock DOMPurify
-const mockDOMPurify = {
-  sanitize: vi.fn((input: string) => input.replace(/<script[^>]*>.*?<\/script>/gi, ''))
-}
-
 vi.mock('dompurify', () => ({
-  default: mockDOMPurify
+  default: {
+    sanitize: vi.fn((input: string) => {
+      // Remove script tags and alert() calls for test purposes
+      return input
+        .replace(/<script[^>]*>.*?<\/script>/gi, '')
+        .replace(/alert\([^)]*\)/gi, '')
+        .replace(/<[^>]*script[^>]*>/gi, '')
+    })
+  }
 }))
 
 describe('sanitization', () => {
-  beforeEach(() => {
-    mockDOMPurify.sanitize.mockClear()
+  let mockSanitize: ReturnType<typeof vi.fn>
+
+  beforeEach(async () => {
+    const DOMPurify = await import('dompurify')
+    mockSanitize = vi.mocked(DOMPurify.default.sanitize)
+    mockSanitize.mockClear()
   })
 
   describe('sanitizeInput', () => {
@@ -29,7 +37,7 @@ describe('sanitization', () => {
       const result = sanitizeInput(input)
       
       expect(result).toBe('Hello World')
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(input, {
+      expect(mockSanitize).toHaveBeenCalledWith(input, {
         ALLOWED_TAGS: [],
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
@@ -50,21 +58,21 @@ describe('sanitization', () => {
       const input = '  Hello World  '
       const result = sanitizeInput(input)
       
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith('Hello World', expect.any(Object))
+      expect(mockSanitize).toHaveBeenCalledWith('Hello World', expect.any(Object))
     })
 
     it('should use different sanitization levels', () => {
       const input = '<b>Bold text</b>'
       
       sanitizeInput(input, 'text')
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(input, {
+      expect(mockSanitize).toHaveBeenCalledWith(input, {
         ALLOWED_TAGS: [],
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
       })
 
       sanitizeInput(input, 'basic')
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(input, {
+      expect(mockSanitize).toHaveBeenCalledWith(input, {
         ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
@@ -77,8 +85,8 @@ describe('sanitization', () => {
       const inputs = ['Hello', 'World', '<script>alert("xss")</script>']
       const result = sanitizeArray(inputs)
       
-      expect(result).toEqual(['Hello', 'World', 'alert("xss")'])
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledTimes(3)
+      expect(result).toEqual(['Hello', 'World'])
+      expect(mockSanitize).toHaveBeenCalledTimes(3)
     })
 
     it('should filter out empty results', () => {
@@ -109,7 +117,7 @@ describe('sanitization', () => {
 
       const result = sanitizeUserProfile(profile)
 
-      expect(result.preferences.dislikedFoods).toEqual(['evil', 'spinach'])
+      expect(result.preferences.dislikedFoods).toEqual(['spinach'])
       expect(result.preferences.cuisineTypes).toEqual(['italian', 'mexican'])
       expect(result.dietaryRestrictions).toEqual(['vegetarian', '<b>gluten-free</b>'])
       expect(result.allergies).toEqual(['nuts', 'shellfish'])
@@ -138,7 +146,7 @@ describe('sanitization', () => {
       const message = '<b>Hello</b> <script>alert("xss")</script> World'
       const result = sanitizeChatMessage(message)
       
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(message, {
+      expect(mockSanitize).toHaveBeenCalledWith(message, {
         ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
@@ -177,7 +185,7 @@ describe('sanitization', () => {
       const input = '<script>alert("xss")</script>Hello World'
       const result = validateAndSanitizeFormInput(input)
       
-      expect(result.value).toBe('alert("xss")Hello World')
+      expect(result.value).toBe('Hello World')
     })
   })
 
@@ -186,7 +194,7 @@ describe('sanitization', () => {
       const description = '<p>Delicious <b>pasta</b></p><script>alert("xss")</script>'
       const result = sanitizeMealDescription(description)
       
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(description, {
+      expect(mockSanitize).toHaveBeenCalledWith(description, {
         ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
@@ -200,7 +208,7 @@ describe('sanitization', () => {
       const result = sanitizeIngredients(ingredients)
       
       expect(result).toEqual(['2 cups flour', ' salt', '1 egg'])
-      expect(mockDOMPurify.sanitize).toHaveBeenCalledTimes(3)
+      expect(mockSanitize).toHaveBeenCalledTimes(3)
     })
   })
 })

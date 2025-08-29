@@ -116,7 +116,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
       weight: undefined,
       activityLevel: undefined,
     },
-    mode: 'onSubmit'
+    mode: 'onBlur'
   })
 
   const preferencesForm = useForm<PreferencesFormData>({
@@ -206,6 +206,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 control={basicForm.control}
                 render={({ field }) => (
                   <Combobox
+                    id="gender"
                     options={genderOptions}
                     value={field.value}
                     onValueChange={field.onChange}
@@ -255,6 +256,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 control={basicForm.control}
                 render={({ field }) => (
                   <Combobox
+                    id="activityLevel"
                     options={activityLevelOptions}
                     value={field.value}
                     onValueChange={field.onChange}
@@ -295,6 +297,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               control={preferencesForm.control}
               render={({ field }) => (
                 <Combobox
+                  id="goals"
                   ref={goalsInputRef}
                   options={goalsOptions}
                   value={field.value}

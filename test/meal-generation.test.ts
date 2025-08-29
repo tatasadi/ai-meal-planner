@@ -1,9 +1,14 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { UserProfile } from "@/lib/types"
+
+// Mock the AI SDK
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}))
 
 // Mock the Azure OpenAI module to avoid requiring actual API keys during tests
 vi.mock("@/lib/azure-openai", () => ({
-  model: vi.fn(),
+  model: "mocked-model",
   azure: vi.fn(),
   AZURE_CONFIG: {
     endpoint: "https://test.openai.azure.com/",
@@ -12,11 +17,6 @@ vi.mock("@/lib/azure-openai", () => ({
     maxTokens: 4000,
     temperature: 0.7,
   },
-}))
-
-// Mock the AI SDK
-vi.mock("ai", () => ({
-  generateObject: vi.fn(),
 }))
 
 describe("Meal Generation", () => {
@@ -38,49 +38,80 @@ describe("Meal Generation", () => {
     },
   }
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe("generateMealPlan", () => {
     it("should generate a valid meal plan structure", async () => {
-      // This is a structural test - actual implementation would need real API keys
-      const { generateMealPlan } = await import("@/lib/meal-generation")
+      // Mock the generateText function
+      const { generateText } = await import("ai")
       
-      // Mock the generateObject function
-      const { generateObject } = await import("ai")
-      vi.mocked(generateObject).mockResolvedValueOnce({
-        object: {
-          title: "3-Day Mediterranean Vegetarian Plan",
-          meals: [
-            {
-              day: 1,
-              type: "breakfast" as const,
-              name: "Greek Yogurt Bowl",
-              description: "Creamy Greek yogurt with honey and nuts",
-              ingredients: ["Greek yogurt", "honey", "walnuts", "berries"],
-              estimatedCalories: 350,
-              prepTime: 5,
-            },
-            // ... more meals would be here in real response
-          ],
-        },
+      const mockResponse = {
+        title: "3-Day Mediterranean Vegetarian Plan",
+        meals: [
+          {
+            day: 1,
+            type: "breakfast" as const,
+            name: "Greek Yogurt Bowl",
+            description: "Creamy Greek yogurt with honey and nuts",
+            ingredients: ["200g Greek yogurt", "30ml honey", "50g walnuts", "100g berries"],
+            estimatedCalories: 350,
+            prepTime: 5,
+          },
+          {
+            day: 1,
+            type: "lunch" as const,
+            name: "Mediterranean Salad",
+            description: "Fresh salad with olive oil dressing",
+            ingredients: ["100g mixed greens", "200g tomatoes", "50g feta cheese", "30ml olive oil"],
+            estimatedCalories: 400,
+            prepTime: 10,
+          },
+          {
+            day: 1,
+            type: "dinner" as const,
+            name: "Vegetarian Pasta",
+            description: "Whole wheat pasta with vegetables",
+            ingredients: ["200g pasta", "300g mixed vegetables", "50g parmesan", "30ml olive oil"],
+            estimatedCalories: 500,
+            prepTime: 25,
+          }
+        ],
+        shoppingList: [
+          {
+            name: "Dairy & Eggs",
+            icon: "🥛",
+            items: ["200g Greek yogurt", "50g feta cheese", "50g parmesan"]
+          }
+        ],
+      }
+
+      vi.mocked(generateText).mockResolvedValueOnce({
+        text: JSON.stringify(mockResponse),
       })
 
+      const { generateMealPlan } = await import("@/lib/meal-generation")
       const result = await generateMealPlan(mockUserProfile, "test-user-123")
       
       expect(result).toHaveProperty("id")
       expect(result).toHaveProperty("userId", "test-user-123")
-      expect(result).toHaveProperty("title")
+      expect(result).toHaveProperty("title", "3-Day Mediterranean Vegetarian Plan")
       expect(result).toHaveProperty("duration", 3)
       expect(result).toHaveProperty("meals")
       expect(result).toHaveProperty("createdAt")
       expect(result).toHaveProperty("updatedAt")
+      expect(result).toHaveProperty("shoppingList")
       expect(Array.isArray(result.meals)).toBe(true)
+      expect(result.meals).toHaveLength(3)
     })
 
     it("should handle API errors gracefully", async () => {
+      // Mock the generateText function to throw an error
+      const { generateText } = await import("ai")
+      vi.mocked(generateText).mockRejectedValueOnce(new Error("API Error"))
+
       const { generateMealPlan } = await import("@/lib/meal-generation")
-      
-      // Mock the generateObject function to throw an error
-      const { generateObject } = await import("ai")
-      vi.mocked(generateObject).mockRejectedValueOnce(new Error("API Error"))
 
       await expect(generateMealPlan(mockUserProfile, "test-user-123"))
         .rejects
@@ -90,8 +121,6 @@ describe("Meal Generation", () => {
 
   describe("regenerateMeal", () => {
     it("should regenerate a single meal", async () => {
-      const { regenerateMeal } = await import("@/lib/meal-generation")
-      
       const mockMeal = {
         id: "meal-1",
         day: 1,
@@ -103,25 +132,29 @@ describe("Meal Generation", () => {
         prepTime: 15,
       }
 
-      // Mock the generateObject function
-      const { generateObject } = await import("ai")
-      vi.mocked(generateObject).mockResolvedValueOnce({
-        object: {
+      // Mock the generateText function
+      const { generateText } = await import("ai")
+      vi.mocked(generateText).mockResolvedValueOnce({
+        text: JSON.stringify({
           name: "New Breakfast Bowl",
           description: "A fresh breakfast option",
-          ingredients: ["oats", "fruits", "nuts"],
+          ingredients: ["100g oats", "150g mixed fruits", "30g nuts"],
           estimatedCalories: 320,
           prepTime: 10,
-        },
+        }),
       })
 
+      const { regenerateMeal } = await import("@/lib/meal-generation")
       const result = await regenerateMeal(mockMeal, mockUserProfile)
       
       expect(result).toHaveProperty("id")
-      expect(result.id).not.toBe(mockMeal.id) // Should have new ID
+      expect(result.id).toBe(mockMeal.id) // Should keep the same ID
       expect(result.day).toBe(mockMeal.day)
       expect(result.type).toBe(mockMeal.type)
       expect(result.name).toBe("New Breakfast Bowl")
+      expect(result.description).toBe("A fresh breakfast option")
+      expect(result.estimatedCalories).toBe(320)
+      expect(result.prepTime).toBe(10)
     })
   })
 })

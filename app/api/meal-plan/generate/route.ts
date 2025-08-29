@@ -15,6 +15,9 @@ import {
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
+// Export for testing
+export { rateLimitStore }
+
 function getRateLimitKey(request: NextRequest): string {
   // In production, you might want to use user ID instead of IP
   const forwarded = request.headers.get("x-forwarded-for")
