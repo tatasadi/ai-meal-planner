@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Toaster } from "react-hot-toast"
-import { ErrorBoundary } from "@/components/ui/error-boundary"
+import { CriticalErrorBoundary } from "@/components/error/error-boundary"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -29,9 +29,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <ErrorBoundary>
+        <CriticalErrorBoundary>
           {children}
-        </ErrorBoundary>
+        </CriticalErrorBoundary>
         <Toaster position="top-right" />
       </body>
     </html>

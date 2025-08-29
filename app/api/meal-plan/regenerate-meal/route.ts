@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { regenerateMeal, regenerateShoppingList } from "@/lib/meal-generation"
 import { UserProfileSchema } from "@/lib/schemas"
+import { sanitizeUserProfile } from "@/lib/sanitization"
 
 // Schema for regenerate meal request
 const RegenerateMealSchema = z.object({
@@ -54,8 +55,11 @@ export async function POST(request: NextRequest) {
       ...userProfile,
     }
 
+    // Sanitize user input before processing
+    const sanitizedProfile = sanitizeUserProfile(completeProfile)
+
     // Regenerate the meal
-    const newMeal = await regenerateMeal(meal, completeProfile, context)
+    const newMeal = await regenerateMeal(meal, sanitizedProfile, context)
 
     // Update the meal in the allMeals array
     const updatedMeals = allMeals.map(m => 
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Regenerate shopping list with updated meals
-    const newShoppingList = await regenerateShoppingList(updatedMeals, completeProfile)
+    const newShoppingList = await regenerateShoppingList(updatedMeals, sanitizedProfile)
 
     return NextResponse.json({
       meal: newMeal,

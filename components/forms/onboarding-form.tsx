@@ -12,6 +12,7 @@ import { Combobox, ComboboxOption } from "@/components/ui/combobox"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useMealPlanStore } from "@/store"
 import { useMealGeneration } from "@/hooks/use-meal-generation"
+import { sanitizeUserProfile } from "@/lib/sanitization"
 import type { UserProfile } from "@/lib/types"
 
 const basicInfoSchema = z.object({
@@ -163,8 +164,10 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
         },
       }
 
-      setUserProfile(userProfile)
-      await generateMealPlan(userProfile)
+      // Sanitize user input before storing
+      const sanitizedProfile = sanitizeUserProfile(userProfile)
+      setUserProfile(sanitizedProfile)
+      await generateMealPlan(sanitizedProfile)
       onComplete?.()
     }
   }

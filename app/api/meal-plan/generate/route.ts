@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { generateMealPlan } from "@/lib/meal-generation"
 import { MealPlanRequestSchema } from "@/lib/schemas"
+import { sanitizeUserProfile } from "@/lib/sanitization"
+import { 
+  handleAPIError, 
+  logger, 
+  monitorPerformance, 
+  AppError, 
+  ErrorType, 
+  ErrorSeverity 
+} from "@/lib/error-handling"
 
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -36,14 +45,29 @@ function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
 }
 
 export async function POST(request: NextRequest) {
+  const performance = monitorPerformance("meal-plan-generation")
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  
   try {
+    logger.info("Meal plan generation started", { requestId })
+    
     // Rate limiting
     const rateLimitKey = getRateLimitKey(request)
     const rateLimit = checkRateLimit(rateLimitKey)
     
     if (!rateLimit.allowed) {
+      const error = new AppError(
+        "Rate limit exceeded",
+        ErrorType.RATE_LIMIT,
+        ErrorSeverity.MEDIUM,
+        {
+          code: "RATE_LIMIT_EXCEEDED",
+          context: { rateLimitKey, requestId },
+        }
+      )
+      logger.warn("Rate limit exceeded", { requestId, rateLimitKey })
       return NextResponse.json(
-        { error: "Rate limit exceeded. Please try again later." },
+        { error: error.userMessage },
         { status: 429 }
       )
     }
@@ -53,9 +77,25 @@ export async function POST(request: NextRequest) {
     
     const validationResult = MealPlanRequestSchema.safeParse(body)
     if (!validationResult.success) {
+      const error = new AppError(
+        "Invalid request data",
+        ErrorType.VALIDATION,
+        ErrorSeverity.LOW,
+        {
+          code: "VALIDATION_ERROR",
+          context: { 
+            requestId,
+            validationErrors: validationResult.error.issues,
+          },
+        }
+      )
+      logger.warn("Request validation failed", { 
+        requestId, 
+        errors: validationResult.error.issues 
+      })
       return NextResponse.json(
         {
-          error: "Invalid request data",
+          error: error.userMessage,
           details: validationResult.error.issues,
         },
         { status: 400 }
@@ -74,39 +114,49 @@ export async function POST(request: NextRequest) {
       ...userProfile,
     }
 
+    // Sanitize user input before processing
+    const sanitizedProfile = sanitizeUserProfile(completeProfile)
+
     // Generate the meal plan
-    const mealPlan = await generateMealPlan(completeProfile, userId)
+    const mealPlan = await generateMealPlan(sanitizedProfile, userId)
+
+    // Log successful completion
+    const duration = performance.finish({ requestId, mealPlanId: mealPlan.id })
+    logger.info("Meal plan generated successfully", { 
+      requestId, 
+      mealPlanId: mealPlan.id, 
+      duration: `${duration}ms`,
+      mealCount: mealPlan.meals.length 
+    })
 
     // Add rate limit headers
     const response = NextResponse.json(mealPlan)
     response.headers.set("X-RateLimit-Remaining", rateLimit.remaining.toString())
     response.headers.set("X-RateLimit-Limit", process.env.RATE_LIMIT_RPM || "60")
+    response.headers.set("X-Request-ID", requestId)
 
     return response
 
   } catch (error) {
-    console.error("Meal plan generation error:", error)
+    const appError = handleAPIError(error, { requestId, operation: "meal-plan-generation" })
+    performance.finish({ requestId, error: true })
 
-    // Handle specific Azure OpenAI errors
-    if (error instanceof Error) {
-      if (error.message.includes("Missing required Azure OpenAI environment variables")) {
-        return NextResponse.json(
-          { error: "Service configuration error. Please contact support." },
-          { status: 500 }
-        )
-      }
-      
-      if (error.message.includes("quota") || error.message.includes("rate limit")) {
-        return NextResponse.json(
-          { error: "Service temporarily unavailable. Please try again later." },
-          { status: 503 }
-        )
-      }
-    }
+    // Return appropriate HTTP status based on error type
+    let status = 500
+    if (appError.type === ErrorType.RATE_LIMIT) status = 429
+    else if (appError.type === ErrorType.VALIDATION) status = 400
+    else if (appError.type === ErrorType.SERVICE_UNAVAILABLE) status = 503
 
     return NextResponse.json(
-      { error: "Failed to generate meal plan. Please try again." },
-      { status: 500 }
+      { 
+        error: appError.userMessage,
+        requestId,
+        ...(process.env.NODE_ENV === "development" && { 
+          details: appError.message,
+          type: appError.type 
+        })
+      },
+      { status }
     )
   }
 }

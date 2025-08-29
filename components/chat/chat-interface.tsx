@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Send, User, Bot } from "lucide-react"
+import { sanitizeChatMessage } from "@/lib/sanitization"
 import type { ChatMessage } from "@/lib/types"
 
 interface ChatInterfaceProps {
@@ -23,8 +24,12 @@ export function ChatInterface({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (input.trim() && !isLoading) {
-      onSendMessage(input.trim())
-      setInput("")
+      // Sanitize user input before sending
+      const sanitizedMessage = sanitizeChatMessage(input.trim())
+      if (sanitizedMessage) {
+        onSendMessage(sanitizedMessage)
+        setInput("")
+      }
     }
   }
 
@@ -69,9 +74,10 @@ export function ChatInterface({
                         ? "bg-primary text-primary-foreground"
                         : "bg-background border"
                     }`}
-                  >
-                    {message.content}
-                  </div>
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeChatMessage(message.content)
+                    }}
+                  />
                 </div>
               </div>
             ))
