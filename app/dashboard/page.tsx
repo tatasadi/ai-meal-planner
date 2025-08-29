@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { MealCard } from "@/src/components/meal/meal-card"
-import { ChatInterface } from "@/src/components/chat/chat-interface"
+import { MealCard } from "@/components/meal/meal-card"
+import { MealDetailsDialog } from "@/components/meal/meal-details-dialog"
+import { ChatInterface } from "@/components/chat/chat-interface"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RefreshCw, AlertCircle } from "lucide-react"
-import { useMealPlanStore } from "@/src/store"
-import { useMealGeneration } from "@/src/hooks/use-meal-generation"
-import { LoadingState } from "@/src/components/ui/loading-state"
-import type { Meal, ChatMessage } from "@/src/lib/types"
+import { useMealPlanStore } from "@/store"
+import { useMealGeneration } from "@/hooks/use-meal-generation"
+import { LoadingState } from "@/components/ui/loading-state"
+import type { Meal, ChatMessage } from "@/lib/types"
 
 
 export default function DashboardPage() {
@@ -18,6 +19,8 @@ export default function DashboardPage() {
   const { currentMealPlan, userProfile } = useMealPlanStore()
   const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, isRegeneratingMeal, error } = useMealGeneration()
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [selectedMealId, setSelectedMealId] = useState<string | null>(null)
+  const [isMealDialogOpen, setIsMealDialogOpen] = useState(false)
   
   const handleRegenerateAll = async () => {
     if (userProfile) {
@@ -108,10 +111,25 @@ export default function DashboardPage() {
 
   const handleRegenerateMeal = async (mealId: string) => {
     const meal = meals.find(m => m.id === mealId)
-    if (meal) {
+    if (meal && userProfile) {
       await regenerateMeal(meal)
     }
   }
+
+  const handleMealClick = (meal: Meal) => {
+    setSelectedMealId(meal.id)
+    setIsMealDialogOpen(true)
+  }
+
+  const handleMealDialogRegenerate = async () => {
+    const selectedMeal = meals.find(m => m.id === selectedMealId)
+    if (selectedMeal && userProfile) {
+      await regenerateMeal(selectedMeal)
+    }
+  }
+
+  // Get the current selected meal from the store (updated after regeneration)
+  const selectedMeal = selectedMealId ? meals.find(m => m.id === selectedMealId) || null : null
 
   const groupedMeals = meals.reduce((acc, meal) => {
     const day = `Day ${meal.day}`
@@ -180,6 +198,7 @@ export default function DashboardPage() {
                           meal={meal}
                           onRegenerate={() => handleRegenerateMeal(meal.id)}
                           isRegenerating={isRegeneratingMeal}
+                          onClick={() => handleMealClick(meal)}
                         />
                       </div>
                     ))}
@@ -233,6 +252,15 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Meal Details Dialog */}
+        <MealDetailsDialog
+          meal={selectedMeal}
+          isOpen={isMealDialogOpen}
+          onOpenChange={setIsMealDialogOpen}
+          onRegenerate={handleMealDialogRegenerate}
+          isRegenerating={isRegeneratingMeal}
+        />
       </div>
     </div>
   )

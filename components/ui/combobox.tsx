@@ -6,6 +6,14 @@ import { Check, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -34,8 +42,18 @@ export function Combobox({
   disabled = false,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const commandRef = React.useRef<HTMLDivElement>(null)
 
   const selectedOption = options.find((option) => option.value === value)
+
+  React.useEffect(() => {
+    if (open) {
+      // Focus the command element when popover opens
+      setTimeout(() => {
+        commandRef.current?.focus()
+      }, 0)
+    }
+  }, [open])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,30 +73,32 @@ export function Combobox({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-1" align="start">
-        <div className="space-y-1">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                onValueChange?.(option.value)
-                setOpen(false)
-              }}
-              className={cn(
-                "relative flex w-full cursor-pointer select-none items-center rounded-md pl-2 pr-3 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
-                value === option.value && "bg-accent text-accent-foreground"
-              )}
-            >
-              <Check
-                className={cn(
-                  "mr-1 h-4 w-4 shrink-0",
-                  value === option.value ? "opacity-100" : "opacity-0"
-                )}
-              />
-              {option.label}
-            </button>
-          ))}
-        </div>
+      <PopoverContent className="w-[200px] p-0" align="start">
+        <Command ref={commandRef} tabIndex={0}>
+          <CommandList>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.label}
+                  onSelect={() => {
+                    onValueChange?.(option.value)
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer hover:bg-blue-100 hover:text-blue-900 aria-selected:bg-blue-500 aria-selected:text-white dark:hover:bg-blue-900 dark:hover:text-blue-100 dark:aria-selected:bg-blue-600"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
       </PopoverContent>
     </Popover>
   )

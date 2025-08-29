@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { generateMealPlan } from "@/src/lib/meal-generation"
-import { MealPlanRequestSchema } from "@/src/lib/schemas"
+import { generateMealPlan } from "@/lib/meal-generation"
+import { MealPlanRequestSchema } from "@/lib/schemas"
 
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()

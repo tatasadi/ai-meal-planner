@@ -1,21 +1,45 @@
-import { generateObject } from "ai"
+import { generateText } from "ai"
 import { z } from "zod"
 import { model } from "./azure-openai"
-import type { UserProfile, MealPlan, Meal } from "@/src/lib/types"
+import type { UserProfile, MealPlan, Meal } from "@/lib/types"
 
 // Schema for AI-generated meal plan response
 const MealPlanResponseSchema = z.object({
   title: z.string(),
-  meals: z.array(z.object({
-    day: z.number(),
-    type: z.enum(["breakfast", "lunch", "dinner"]),
-    name: z.string(),
-    description: z.string(),
-    ingredients: z.array(z.string()),
-    estimatedCalories: z.number(),
-    prepTime: z.number(),
-  })),
+  meals: z.array(
+    z.object({
+      day: z.number(),
+      type: z.enum(["breakfast", "lunch", "dinner"]),
+      name: z.string(),
+      description: z.string(),
+      ingredients: z.array(z.string()),
+      estimatedCalories: z.number(),
+      prepTime: z.number(),
+    })
+  ),
 })
+
+// Helper function to clean AI response text and parse JSON
+function parseAIResponse(text: string): any {
+  // Clean the response text to handle markdown code blocks
+  let cleanedText = text.trim()
+  
+  // Remove markdown code block markers if present
+  if (cleanedText.startsWith('```json') || cleanedText.startsWith('```')) {
+    const lines = cleanedText.split('\n')
+    // Remove first line if it starts with ```
+    if (lines[0].startsWith('```')) {
+      lines.shift()
+    }
+    // Remove last line if it's just ```
+    if (lines[lines.length - 1].trim() === '```') {
+      lines.pop()
+    }
+    cleanedText = lines.join('\n')
+  }
+  
+  return JSON.parse(cleanedText)
+}
 
 // Helper function to calculate daily caloric needs
 function calculateDailyCalories(profile: UserProfile): number {
@@ -56,21 +80,25 @@ function createMealPlanPrompt(profile: UserProfile): string {
   const dailyCalories = calculateDailyCalories(profile)
   const caloriesPerMeal = Math.round(dailyCalories / 3)
 
-  const restrictionsText = profile.dietaryRestrictions.length > 0
-    ? `Dietary restrictions: ${profile.dietaryRestrictions.join(", ")}`
-    : "No specific dietary restrictions"
+  const restrictionsText =
+    profile.dietaryRestrictions.length > 0
+      ? `Dietary restrictions: ${profile.dietaryRestrictions.join(", ")}`
+      : "No specific dietary restrictions"
 
-  const allergiesText = profile.allergies.length > 0
-    ? `Allergies: ${profile.allergies.join(", ")}`
-    : "No known allergies"
+  const allergiesText =
+    profile.allergies.length > 0
+      ? `Allergies: ${profile.allergies.join(", ")}`
+      : "No known allergies"
 
-  const dislikedFoodsText = profile.preferences.dislikedFoods.length > 0
-    ? `Foods to avoid: ${profile.preferences.dislikedFoods.join(", ")}`
-    : "No specific food dislikes"
+  const dislikedFoodsText =
+    profile.preferences.dislikedFoods.length > 0
+      ? `Foods to avoid: ${profile.preferences.dislikedFoods.join(", ")}`
+      : "No specific food dislikes"
 
-  const cuisineText = profile.preferences.cuisineTypes.length > 0
-    ? `Preferred cuisines: ${profile.preferences.cuisineTypes.join(", ")}`
-    : "Any cuisine type"
+  const cuisineText =
+    profile.preferences.cuisineTypes.length > 0
+      ? `Preferred cuisines: ${profile.preferences.cuisineTypes.join(", ")}`
+      : "Any cuisine type"
 
   return `Generate a 3-day meal plan for a ${profile.age}-year-old ${profile.gender} with the following profile:
 
@@ -99,7 +127,23 @@ Requirements:
 - Avoid disliked foods
 - Match the requested meal complexity level
 
-Please create diverse, balanced meals that align with their health goals.`
+Please create diverse, balanced meals that align with their health goals.
+
+Respond with a JSON object in this exact format:
+{
+  "title": "string - descriptive title for the meal plan",
+  "meals": [
+    {
+      "day": number,
+      "type": "breakfast" | "lunch" | "dinner",
+      "name": "string",
+      "description": "string",
+      "ingredients": ["string"],
+      "estimatedCalories": number,
+      "prepTime": number
+    }
+  ]
+}`
 }
 
 // Generate a meal plan using Azure OpenAI
@@ -110,12 +154,23 @@ export async function generateMealPlan(
   try {
     const prompt = createMealPlanPrompt(userProfile)
 
-    const { object } = await generateObject({
+    const { text } = await generateText({
       model,
-      schema: MealPlanResponseSchema,
       prompt,
       temperature: 0.7,
     })
+
+    // Parse the JSON response
+    let parsedResponse
+    try {
+      parsedResponse = parseAIResponse(text)
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", text)
+      throw new Error("Invalid response format from AI")
+    }
+
+    // Validate with Zod schema
+    const object = MealPlanResponseSchema.parse(parsedResponse)
 
     // Transform the AI response into our MealPlan format
     const meals: Meal[] = object.meals.map((meal, index) => ({
@@ -170,24 +225,44 @@ User Profile:
 Target: ~${targetCalories} calories
 ${contextText}
 
-Create a different meal than "${meal.name}" that fits the user's profile and preferences.`
+Create a different meal than "${meal.name}" that fits the user's profile and preferences.
 
-    const { object } = await generateObject({
+Respond with a JSON object in this exact format:
+{
+  "name": "string",
+  "description": "string", 
+  "ingredients": ["string"],
+  "estimatedCalories": number,
+  "prepTime": number
+}`
+
+    const { text } = await generateText({
       model,
-      schema: z.object({
-        name: z.string(),
-        description: z.string(),
-        ingredients: z.array(z.string()),
-        estimatedCalories: z.number(),
-        prepTime: z.number(),
-      }),
       prompt,
       temperature: 0.8,
     })
 
+    // Parse the JSON response
+    let parsedResponse
+    try {
+      parsedResponse = parseAIResponse(text)
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", text)
+      throw new Error("Invalid response format from AI")
+    }
+
+    // Validate with Zod schema
+    const mealSchema = z.object({
+      name: z.string(),
+      description: z.string(),
+      ingredients: z.array(z.string()),
+      estimatedCalories: z.number(),
+      prepTime: z.number(),
+    })
+    const object = mealSchema.parse(parsedResponse)
+
     return {
       ...meal,
-      id: `meal-${Date.now()}`,
       name: object.name,
       description: object.description,
       ingredients: object.ingredients,

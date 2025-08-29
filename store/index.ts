@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { devtools, persist } from "zustand/middleware"
-import type { UserProfile, MealPlan, Meal } from "@/src/lib/types"
+import type { UserProfile, MealPlan, Meal } from "@/lib/types"
 
 interface MealPlanState {
   // User data
@@ -48,14 +48,17 @@ export const useMealPlanStore = create<MealPlanState>()(
 
         // Loading state actions
         setGeneratingMealPlan: (loading: boolean) =>
-          set({ isGeneratingMealPlan: loading }, false, "setGeneratingMealPlan"),
+          set(
+            { isGeneratingMealPlan: loading },
+            false,
+            "setGeneratingMealPlan"
+          ),
 
         setRegeneratingMeal: (loading: boolean) =>
           set({ isRegeneratingMeal: loading }, false, "setRegeneratingMeal"),
 
         // Error handling
-        setError: (error: string | null) =>
-          set({ error }, false, "setError"),
+        setError: (error: string | null) => set({ error }, false, "setError"),
 
         // Meal operations
         updateMeal: (updatedMeal: Meal) => {

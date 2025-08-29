@@ -1,4 +1,4 @@
-import type { UserProfile, MealPlan, Meal } from "@/src/lib/types"
+import type { UserProfile, MealPlan, Meal } from "@/lib/types"
 
 export class APIError extends Error {
   constructor(
@@ -14,16 +14,16 @@ export class APIError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({
-      error: "An unknown error occurred"
+      error: "An unknown error occurred",
     }))
-    
+
     throw new APIError(
       error.error || `HTTP ${response.status}`,
       response.status,
       error.details
     )
   }
-  
+
   return response.json()
 }
 

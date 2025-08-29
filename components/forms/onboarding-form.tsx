@@ -10,16 +10,22 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Combobox, ComboboxOption } from "@/components/ui/combobox"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useMealPlanStore } from "@/src/store"
-import { useMealGeneration } from "@/src/hooks/use-meal-generation"
-import type { UserProfile } from "@/src/lib/types"
+import { useMealPlanStore } from "@/store"
+import { useMealGeneration } from "@/hooks/use-meal-generation"
+import type { UserProfile } from "@/lib/types"
 
 const basicInfoSchema = z.object({
   age: z.number().min(13).max(120),
   gender: z.enum(["male", "female", "other"]),
   height: z.number().min(100).max(250),
   weight: z.number().min(30).max(300),
-  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
+  activityLevel: z.enum([
+    "sedentary",
+    "light",
+    "moderate",
+    "active",
+    "very_active",
+  ]),
 })
 
 const preferencesSchema = z.object({
@@ -83,7 +89,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     if (basicInfo) {
       const userProfile: UserProfile = {
         id: `user-${Date.now()}`,
-        email: 'temp@example.com', // TODO: Get from auth
+        email: "temp@example.com", // TODO: Get from auth
         age: basicInfo.age,
         gender: basicInfo.gender,
         height: basicInfo.height,
@@ -94,11 +100,13 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
         allergies: [], // TODO: Add allergies field to form
         preferences: {
           cuisineTypes: [], // TODO: Add cuisine preferences
-          dislikedFoods: data.dislikedFoods ? data.dislikedFoods.split(',').map(s => s.trim()) : [],
-          mealComplexity: 'moderate', // TODO: Add complexity field
+          dislikedFoods: data.dislikedFoods
+            ? data.dislikedFoods.split(",").map((s) => s.trim())
+            : [],
+          mealComplexity: "moderate", // TODO: Add complexity field
         },
       }
-      
+
       setUserProfile(userProfile)
       await generateMealPlan(userProfile)
       onComplete?.()
@@ -112,7 +120,10 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
           <CardTitle>Tell us about yourself</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={basicForm.handleSubmit(onBasicInfoSubmit)} className="space-y-4">
+          <form
+            onSubmit={basicForm.handleSubmit(onBasicInfoSubmit)}
+            className="space-y-4"
+          >
             <div className="form-group">
               <Label htmlFor="age">Age</Label>
               <Input
@@ -121,7 +132,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 {...basicForm.register("age", { valueAsNumber: true })}
               />
               {basicForm.formState.errors.age && (
-                <p className="text-sm text-destructive">{basicForm.formState.errors.age.message}</p>
+                <p className="text-sm text-destructive">
+                  {basicForm.formState.errors.age.message}
+                </p>
               )}
             </div>
 
@@ -140,7 +153,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 )}
               />
               {basicForm.formState.errors.gender && (
-                <p className="text-sm text-destructive">{basicForm.formState.errors.gender.message}</p>
+                <p className="text-sm text-destructive">
+                  {basicForm.formState.errors.gender.message}
+                </p>
               )}
             </div>
 
@@ -152,7 +167,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 {...basicForm.register("height", { valueAsNumber: true })}
               />
               {basicForm.formState.errors.height && (
-                <p className="text-sm text-destructive">{basicForm.formState.errors.height.message}</p>
+                <p className="text-sm text-destructive">
+                  {basicForm.formState.errors.height.message}
+                </p>
               )}
             </div>
 
@@ -164,7 +181,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 {...basicForm.register("weight", { valueAsNumber: true })}
               />
               {basicForm.formState.errors.weight && (
-                <p className="text-sm text-destructive">{basicForm.formState.errors.weight.message}</p>
+                <p className="text-sm text-destructive">
+                  {basicForm.formState.errors.weight.message}
+                </p>
               )}
             </div>
 
@@ -183,7 +202,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                 )}
               />
               {basicForm.formState.errors.activityLevel && (
-                <p className="text-sm text-destructive">{basicForm.formState.errors.activityLevel.message}</p>
+                <p className="text-sm text-destructive">
+                  {basicForm.formState.errors.activityLevel.message}
+                </p>
               )}
             </div>
 
@@ -202,7 +223,10 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
         <CardTitle>Your preferences</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={preferencesForm.handleSubmit(onPreferencesSubmit)} className="space-y-4">
+        <form
+          onSubmit={preferencesForm.handleSubmit(onPreferencesSubmit)}
+          className="space-y-4"
+        >
           <div className="form-group">
             <Label htmlFor="goals">Goal</Label>
             <Controller
@@ -218,7 +242,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               )}
             />
             {preferencesForm.formState.errors.goals && (
-              <p className="text-sm text-destructive">{preferencesForm.formState.errors.goals.message}</p>
+              <p className="text-sm text-destructive">
+                {preferencesForm.formState.errors.goals.message}
+              </p>
             )}
           </div>
 
@@ -240,13 +266,17 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
                           if (checked) {
                             field.onChange([...currentValue, restriction])
                           } else {
-                            field.onChange(currentValue.filter((value: string) => value !== restriction))
+                            field.onChange(
+                              currentValue.filter(
+                                (value: string) => value !== restriction
+                              )
+                            )
                           }
                         }}
                         className="mt-0.5"
                       />
-                      <Label 
-                        htmlFor={restriction} 
+                      <Label
+                        htmlFor={restriction}
                         className="text-sm capitalize cursor-pointer leading-5 mb-0"
                       >
                         {restriction.replace("-", " ")}
@@ -268,17 +298,26 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
           </div>
 
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(1)}
+              className="flex-1"
+            >
               Back
             </Button>
-            <Button type="submit" className="flex-1" disabled={isGeneratingMealPlan}>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isGeneratingMealPlan}
+            >
               {isGeneratingMealPlan ? (
                 <>
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
                   Generating Plan...
                 </>
               ) : (
-                'Complete'
+                "Complete"
               )}
             </Button>
           </div>

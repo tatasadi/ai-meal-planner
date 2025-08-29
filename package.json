@@ -13,6 +13,7 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^2.0.22",
     "@ai-sdk/openai": "^2.0.21",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-checkbox": "^1.3.3",

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { regenerateMeal } from "@/src/lib/meal-generation"
-import { UserProfileSchema } from "@/src/lib/schemas"
+import { regenerateMeal } from "@/lib/meal-generation"
+import { UserProfileSchema } from "@/lib/schemas"
 
 // Schema for regenerate meal request
 const RegenerateMealSchema = z.object({

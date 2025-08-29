@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Send, User, Bot } from "lucide-react"
-import type { ChatMessage } from "@/src/lib/types"
+import type { ChatMessage } from "@/lib/types"
 
 interface ChatInterfaceProps {
   messages: ChatMessage[]
@@ -13,7 +13,11 @@ interface ChatInterfaceProps {
   isLoading?: boolean
 }
 
-export function ChatInterface({ messages, onSendMessage, isLoading = false }: ChatInterfaceProps) {
+export function ChatInterface({
+  messages,
+  onSendMessage,
+  isLoading = false,
+}: ChatInterfaceProps) {
   const [input, setInput] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,7 +39,9 @@ export function ChatInterface({ messages, onSendMessage, isLoading = false }: Ch
             <div className="text-center text-muted-foreground text-sm py-8">
               <Bot className="w-6 h-6 mx-auto mb-2 opacity-50" />
               <p>Ask me to modify your meal plan!</p>
-              <p className="text-xs mt-1">Try: "Make the lunch lighter" or "I don't like salmon"</p>
+              <p className="text-xs mt-1">
+                Try: "Make the lunch lighter" or "I don't like salmon"
+              </p>
             </div>
           ) : (
             messages.map((message) => (

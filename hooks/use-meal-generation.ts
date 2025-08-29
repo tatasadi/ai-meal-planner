@@ -1,9 +1,14 @@
 import { useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
-import { useMealPlanStore } from "@/src/store"
-import { mealPlanAPI, APIError, isRateLimitError, isValidationError } from "@/src/lib/api-client"
-import type { UserProfile, Meal } from "@/src/lib/types"
+import { useMealPlanStore } from "@/store"
+import {
+  mealPlanAPI,
+  APIError,
+  isRateLimitError,
+  isValidationError,
+} from "@/lib/api-client"
+import type { UserProfile, Meal } from "@/lib/types"
 
 export function useMealGeneration() {
   const router = useRouter()
@@ -28,19 +33,22 @@ export function useMealGeneration() {
         router.push("/dashboard")
       } catch (error) {
         console.error("Meal plan generation failed:", error)
-        
+
         let errorMessage = "Failed to generate meal plan. Please try again."
-        
+
         if (error instanceof APIError) {
           if (isRateLimitError(error)) {
-            errorMessage = "Too many requests. Please wait a moment and try again."
+            errorMessage =
+              "Too many requests. Please wait a moment and try again."
           } else if (isValidationError(error)) {
-            errorMessage = "Invalid profile data. Please check your information."
+            errorMessage =
+              "Invalid profile data. Please check your information."
           } else if (error.status === 503) {
-            errorMessage = "Service temporarily unavailable. Please try again later."
+            errorMessage =
+              "Service temporarily unavailable. Please try again later."
           }
         }
-        
+
         setError(errorMessage)
         toast.error(errorMessage)
       } finally {
@@ -61,22 +69,28 @@ export function useMealGeneration() {
       setRegeneratingMeal(true)
 
       try {
-        const newMeal = await mealPlanAPI.regenerateMeal(meal, userProfile, context)
+        const newMeal = await mealPlanAPI.regenerateMeal(
+          meal,
+          userProfile,
+          context
+        )
         updateMeal(newMeal)
         toast.success("Meal regenerated successfully!")
       } catch (error) {
         console.error("Meal regeneration failed:", error)
-        
+
         let errorMessage = "Failed to regenerate meal. Please try again."
-        
+
         if (error instanceof APIError) {
           if (isRateLimitError(error)) {
-            errorMessage = "Too many requests. Please wait a moment and try again."
+            errorMessage =
+              "Too many requests. Please wait a moment and try again."
           } else if (error.status === 503) {
-            errorMessage = "Service temporarily unavailable. Please try again later."
+            errorMessage =
+              "Service temporarily unavailable. Please try again later."
           }
         }
-        
+
         setError(errorMessage)
         toast.error(errorMessage)
       } finally {
@@ -86,11 +100,7 @@ export function useMealGeneration() {
     [userProfile, setError, setRegeneratingMeal, updateMeal]
   )
 
-  const {
-    isGeneratingMealPlan,
-    isRegeneratingMeal,
-    error,
-  } = useMealPlanStore()
+  const { isGeneratingMealPlan, isRegeneratingMeal, error } = useMealPlanStore()
 
   return {
     generateMealPlan,

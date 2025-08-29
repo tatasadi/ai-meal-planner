@@ -1,4 +1,4 @@
-import { createOpenAI } from "@ai-sdk/openai"
+import { createAzure } from "@ai-sdk/azure"
 
 // Validate required environment variables
 const requiredEnvVars = {
@@ -16,20 +16,26 @@ const missingVars = Object.entries(requiredEnvVars)
 if (missingVars.length > 0) {
   throw new Error(
     `Missing required Azure OpenAI environment variables: ${missingVars.join(", ")}. ` +
-    "Please check your .env.local file."
+      "Please check your .env.local file."
   )
 }
 
-// Create Azure OpenAI client with correct configuration for Azure
-// The key is to NOT include the deployment name or chat/completions in the baseURL
-export const azure = createOpenAI({
-  baseURL: `${requiredEnvVars.endpoint.replace(/\/$/, '')}/openai/deployments/${requiredEnvVars.deploymentName}`,
-  apiKey: requiredEnvVars.apiKey,
-  defaultQuery: { 'api-version': requiredEnvVars.apiVersion },
+// Create Azure OpenAI client using the dedicated Azure provider
+// Extract resource name from endpoint URL
+const resourceName = requiredEnvVars
+  .endpoint!.replace("https://", "")
+  .replace(".openai.azure.com/", "")
+  .replace(".openai.azure.com", "")
+
+export const azure = createAzure({
+  resourceName,
+  apiKey: requiredEnvVars.apiKey!,
+  apiVersion: requiredEnvVars.apiVersion,
+  useDeploymentBasedUrls: true,
 })
 
-// Export the model - for Azure, we don't use the deployment name as model ID, use empty string
-export const model = azure('')
+// Export the model using the deployment name
+export const model = azure(requiredEnvVars.deploymentName!)
 
 // Configuration constants
 export const AZURE_CONFIG = {

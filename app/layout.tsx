@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Toaster } from "react-hot-toast"
-import { ErrorBoundary } from "@/src/components/ui/error-boundary"
+import { ErrorBoundary } from "@/components/ui/error-boundary"
 import "./globals.css"
 
 const geistSans = Geist({
