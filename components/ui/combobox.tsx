@@ -33,14 +33,15 @@ interface ComboboxProps {
   disabled?: boolean
 }
 
-export function Combobox({
-  options,
-  value,
-  onValueChange,
-  placeholder = "Select option...",
-  className,
-  disabled = false,
-}: ComboboxProps) {
+export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
+  function Combobox({
+    options,
+    value,
+    onValueChange,
+    placeholder = "Select option...",
+    className,
+    disabled = false,
+  }, ref) {
   const [open, setOpen] = React.useState(false)
   const commandRef = React.useRef<HTMLDivElement>(null)
 
@@ -59,6 +60,7 @@ export function Combobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          ref={ref}
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -118,4 +120,4 @@ export function Combobox({
       </PopoverContent>
     </Popover>
   )
-}
+})

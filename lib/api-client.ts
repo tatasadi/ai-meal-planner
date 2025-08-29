@@ -1,4 +1,4 @@
-import type { UserProfile, MealPlan, Meal } from "@/lib/types"
+import type { UserProfile, MealPlan, Meal, ShoppingCategory } from "@/lib/types"
 
 export class APIError extends Error {
   constructor(
@@ -48,7 +48,7 @@ export const mealPlanAPI = {
     allMeals: Meal[],
     userProfile: UserProfile,
     context?: string
-  ): Promise<{ meal: Meal; shoppingList: string[] }> {
+  ): Promise<{ meal: Meal; shoppingList: ShoppingCategory[] }> {
     const response = await fetch("/api/meal-plan/regenerate-meal", {
       method: "POST",
       headers: {

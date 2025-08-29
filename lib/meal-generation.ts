@@ -3,6 +3,52 @@ import { z } from "zod"
 import { model } from "./azure-openai"
 import type { UserProfile, MealPlan, Meal } from "@/lib/types"
 
+// Shopping list categories template
+const SHOPPING_LIST_FORMAT = `[
+    {
+      "name": "Produce",
+      "icon": "🥬",
+      "items": ["string - consolidated fresh fruits, vegetables, herbs with quantities"]
+    },
+    {
+      "name": "Meat & Seafood", 
+      "icon": "🥩",
+      "items": ["string - consolidated meat, poultry, seafood with quantities"]
+    },
+    {
+      "name": "Dairy & Eggs",
+      "icon": "🥛", 
+      "items": ["string - consolidated dairy products, eggs with quantities"]
+    },
+    {
+      "name": "Pantry & Canned Goods",
+      "icon": "🥫",
+      "items": ["string - consolidated grains, pasta, rice, canned goods, dry goods with quantities (NOT bread or wraps)"]
+    },
+    {
+      "name": "Spices & Seasonings",
+      "icon": "🌿",
+      "items": ["string - consolidated spices, herbs, seasonings with quantities"]
+    },
+    {
+      "name": "Condiments & Oils",
+      "icon": "🍯",
+      "items": ["string - consolidated oils, vinegars, sauces, condiments with quantities"]
+    },
+    {
+      "name": "Frozen",
+      "icon": "🧊", 
+      "items": ["string - consolidated frozen items with quantities"]
+    },
+    {
+      "name": "Bakery",
+      "icon": "🍞",
+      "items": ["string - consolidated bread, wraps, tortillas, baked goods with quantities"]
+    }
+  ]
+
+IMPORTANT: Only include categories that have items. Do not include empty categories in the response. Every ingredient from all meals must be categorized into one of these categories, but empty categories should be omitted.`
+
 // Schema for AI-generated meal plan response
 const MealPlanResponseSchema = z.object({
   title: z.string(),
@@ -17,7 +63,13 @@ const MealPlanResponseSchema = z.object({
       prepTime: z.number(),
     })
   ),
-  shoppingList: z.array(z.string()),
+  shoppingList: z.array(
+    z.object({
+      name: z.string(),
+      icon: z.string(),
+      items: z.array(z.string()),
+    })
+  ),
 })
 
 // Helper function to clean AI response text and parse JSON
@@ -120,14 +172,25 @@ Target: ${dailyCalories} calories per day (~${caloriesPerMeal} calories per meal
 
 Requirements:
 - Generate exactly 9 meals (3 days × 3 meals per day)
-- Each meal should be practical and achievable
+- Each meal should be practical and achievable with clear, descriptive names
+- Provide detailed, appetizing descriptions for each meal
 - Include estimated prep time in minutes
-- Provide detailed ingredient lists
+- Provide detailed ingredient lists with specific quantities using METRIC units (e.g., "200g spinach", "500g chicken breast", "30ml olive oil", "2 tbsp butter", "1 tsp salt")
 - Ensure nutritional balance across the day
 - Respect all dietary restrictions and allergies
 - Avoid disliked foods
 - Match the requested meal complexity level
-- Generate a consolidated shopping list that combines duplicate ingredients with proper quantities
+- Generate a CONSOLIDATED shopping list that intelligently combines duplicate ingredients:
+  * If multiple meals use "5ml olive oil" → combine to total amount needed
+  * If you see "100g spinach" + "200g spinach" → combine to "300g fresh spinach"  
+  * Use METRIC units: grams (g), kilograms (kg), milliliters (ml), liters (L), tablespoons (tbsp), teaspoons (tsp)
+  * Convert to practical shopping amounts (e.g., "1.5kg" instead of "1500g")
+  * Use realistic shopping language (e.g., "2 large tomatoes" not "400g diced tomatoes")
+- Organize consolidated ingredients into exactly 8 predefined categories (see format below)
+- CRITICAL: Every single ingredient from all meals must appear ONCE in the appropriate category after consolidation
+- NO INGREDIENTS CAN BE MISSED - the shopping list must contain ALL ingredients needed to make every meal
+- Only include categories that have items - omit empty categories from the response
+- The shopping list should have fewer items than total ingredients due to consolidation, but must cover 100% of ingredients
 
 Please create diverse, balanced meals that align with their health goals.
 
@@ -138,16 +201,14 @@ Respond with a JSON object in this exact format:
     {
       "day": number,
       "type": "breakfast" | "lunch" | "dinner",
-      "name": "string",
-      "description": "string",
-      "ingredients": ["string"],
+      "name": "string - descriptive meal name",
+      "description": "string - detailed, appetizing description of the meal",
+      "ingredients": ["string - ingredient with specific quantity using METRIC units (e.g., '200g spinach', '500g chicken breast', '30ml olive oil', '2 tbsp butter', '1 tsp salt')"],
       "estimatedCalories": number,
       "prepTime": number
     }
   ],
-  "shoppingList": [
-    "string - consolidated ingredient with total quantity needed (e.g., 'Olive oil (about 1/4 cup total)', 'Chicken breast (2 lbs)', 'Yellow onions (2 medium)')"
-  ]
+  "shoppingList": ${SHOPPING_LIST_FORMAT}
 }`
 }
 
@@ -232,12 +293,13 @@ Target: ~${targetCalories} calories
 ${contextText}
 
 Create a different meal than "${meal.name}" that fits the user's profile and preferences.
+Provide a detailed, appetizing description and include specific quantities for all ingredients.
 
 Respond with a JSON object in this exact format:
 {
-  "name": "string",
-  "description": "string", 
-  "ingredients": ["string"],
+  "name": "string - descriptive meal name",
+  "description": "string - detailed, appetizing description of the meal", 
+  "ingredients": ["string - ingredient with specific quantity using METRIC units (e.g., '200g spinach', '500g chicken breast', '30ml olive oil', '2 tbsp butter', '1 tsp salt')"],
   "estimatedCalories": number,
   "prepTime": number
 }`
@@ -285,30 +347,48 @@ Respond with a JSON object in this exact format:
 export async function regenerateShoppingList(
   meals: Meal[],
   userProfile: UserProfile
-): Promise<string[]> {
+): Promise<{ name: string; icon: string; items: string[] }[]> {
   try {
     const mealsText = meals.map(meal => 
       `Day ${meal.day} ${meal.type}: ${meal.name}\nIngredients: ${meal.ingredients.join(", ")}`
     ).join("\n\n")
 
+    const allIngredients = meals.flatMap(meal => meal.ingredients)
+    const uniqueIngredients = [...new Set(allIngredients)]
+
     const prompt = `Based on the following meal plan, generate a consolidated shopping list that combines duplicate ingredients with proper quantities:
 
 ${mealsText}
 
+COMPLETE INGREDIENT LIST (${uniqueIngredients.length} total ingredients):
+${uniqueIngredients.map((ing, i) => `${i + 1}. ${ing}`).join("\n")}
+
 User dietary restrictions: ${userProfile.dietaryRestrictions.join(", ") || "None"}
 User allergies: ${userProfile.allergies.join(", ") || "None"}
 
-Create a practical shopping list that:
-- Combines duplicate ingredients (e.g., if multiple meals use olive oil, show total amount needed)
-- Shows realistic quantities for grocery shopping
-- Groups similar items when appropriate
-- Uses clear, practical language
+Create a CONSOLIDATED shopping list that intelligently combines duplicate ingredients:
+
+CONSOLIDATION EXAMPLES:
+- If you see: "5ml olive oil", "30ml olive oil", "5ml olive oil" → Combine to: "40ml olive oil"
+- If you see: "100g spinach", "200g spinach" → Combine to: "300g fresh spinach"
+- If you see: "500g chicken breast", "250g chicken breast" → Combine to: "750g chicken breast"
+- If you see: "1 onion", "1/2 onion" → Combine to: "1.5 medium onions"
+
+Requirements:
+- CONSOLIDATE all duplicate ingredients by adding up quantities
+- Use METRIC units: grams (g), kilograms (kg), milliliters (ml), liters (L), tablespoons (tbsp), teaspoons (tsp)
+- Convert to practical shopping amounts (e.g., "1.5kg" instead of "1500g", "500ml" instead of "0.5L")
+- Use realistic shopping language (e.g., "2 large tomatoes" instead of "400g diced tomatoes")
+- Organize consolidated ingredients into exactly 8 predefined categories
+- CRITICAL: Every single ingredient from the meal plan must appear ONCE in the appropriate category
+- NO INGREDIENTS CAN BE MISSED - verify that every ingredient from all meals is included in the shopping list
+- Only include categories that have items - omit empty categories from the response
+- The final shopping list should have fewer items than the original ingredient list due to consolidation, but must cover 100% of ingredients
+- VERIFICATION: Count total unique ingredients in meals vs shopping list items to ensure nothing is missing
 
 Respond with a JSON object in this exact format:
 {
-  "shoppingList": [
-    "string - consolidated ingredient with total quantity needed"
-  ]
+  "shoppingList": ${SHOPPING_LIST_FORMAT}
 }`
 
     const { text } = await generateText({
@@ -328,7 +408,13 @@ Respond with a JSON object in this exact format:
 
     // Validate with Zod schema
     const shoppingListSchema = z.object({
-      shoppingList: z.array(z.string()),
+      shoppingList: z.array(
+        z.object({
+          name: z.string(),
+          icon: z.string(),
+          items: z.array(z.string()),
+        })
+      ),
     })
     const object = shoppingListSchema.parse(parsedResponse)
 

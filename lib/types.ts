@@ -18,13 +18,19 @@ export interface UserProfile {
   }
 }
 
+export interface ShoppingCategory {
+  name: string
+  icon: string
+  items: string[]
+}
+
 export interface MealPlan {
   id: string
   userId: string
   title: string
   duration: number // days
   meals: Meal[]
-  shoppingList: string[] // AI-generated consolidated shopping list
+  shoppingList: ShoppingCategory[] // AI-generated categorized shopping list
   createdAt: Date
   updatedAt: Date
 }

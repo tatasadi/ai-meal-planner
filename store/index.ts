@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { devtools, persist } from "zustand/middleware"
-import type { UserProfile, MealPlan, Meal } from "@/lib/types"
+import type { UserProfile, MealPlan, Meal, ShoppingCategory } from "@/lib/types"
 
 interface MealPlanState {
   // User data
@@ -23,8 +23,8 @@ interface MealPlanState {
 
   // Meal operations
   updateMeal: (updatedMeal: Meal) => void
-  updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: string[]) => void
-  updateShoppingList: (shoppingList: string[]) => void
+  updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: ShoppingCategory[]) => void
+  updateShoppingList: (shoppingList: ShoppingCategory[]) => void
   clearMealPlan: () => void
   clearAll: () => void
 }
@@ -84,7 +84,7 @@ export const useMealPlanStore = create<MealPlanState>()(
           )
         },
 
-        updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: string[]) => {
+        updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: ShoppingCategory[]) => {
           const { currentMealPlan } = get()
           if (!currentMealPlan) return
 
@@ -106,7 +106,7 @@ export const useMealPlanStore = create<MealPlanState>()(
           )
         },
 
-        updateShoppingList: (shoppingList: string[]) => {
+        updateShoppingList: (shoppingList: ShoppingCategory[]) => {
           const { currentMealPlan } = get()
           if (!currentMealPlan) return
 

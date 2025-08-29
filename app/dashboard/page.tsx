@@ -35,7 +35,9 @@ export default function DashboardPage() {
     
     // Use AI-generated shopping list, with fallback for backward compatibility
     if (currentMealPlan.shoppingList?.length) {
-      return currentMealPlan.shoppingList.slice(0, 5) // Show first 5 items as preview
+      // Flatten categorized shopping list for preview
+      const allItems = currentMealPlan.shoppingList.flatMap(category => category.items)
+      return allItems.slice(0, 5) // Show first 5 items as preview
     } else {
       // Fallback for old meal plans without shopping lists
       const allIngredients = currentMealPlan.meals.flatMap(meal => meal.ingredients)

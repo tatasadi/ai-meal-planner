@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -15,17 +15,30 @@ import { useMealGeneration } from "@/hooks/use-meal-generation"
 import type { UserProfile } from "@/lib/types"
 
 const basicInfoSchema = z.object({
-  age: z.number().min(13).max(120),
-  gender: z.enum(["male", "female", "other"]),
-  height: z.number().min(100).max(250),
-  weight: z.number().min(30).max(300),
+  age: z.number({
+    required_error: "Age is required",
+    invalid_type_error: "Please enter a valid age",
+  }).min(13, "Age must be at least 13").max(120, "Age must be less than 120"),
+  gender: z.enum(["male", "female", "other"], {
+    required_error: "Please select a gender",
+  }),
+  height: z.number({
+    required_error: "Height is required",
+    invalid_type_error: "Please enter a valid height",
+  }).min(100, "Height must be at least 100cm").max(250, "Height must be less than 250cm"),
+  weight: z.number({
+    required_error: "Weight is required", 
+    invalid_type_error: "Please enter a valid weight",
+  }).min(30, "Weight must be at least 30kg").max(300, "Weight must be less than 300kg"),
   activityLevel: z.enum([
     "sedentary",
     "light",
     "moderate",
     "active",
     "very_active",
-  ]),
+  ], {
+    required_error: "Please select an activity level",
+  }),
 })
 
 const preferencesSchema = z.object({
@@ -67,9 +80,42 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const [basicInfo, setBasicInfo] = useState<BasicInfoFormData | null>(null)
   const { setUserProfile } = useMealPlanStore()
   const { generateMealPlan, isGeneratingMealPlan } = useMealGeneration()
+  const ageInputRef = useRef<HTMLInputElement>(null)
+  const goalsInputRef = useRef<HTMLButtonElement>(null)
+
+  // Focus age input when component mounts or step changes
+  useEffect(() => {
+    if (step === 1) {
+      // Find the age input by ID as a fallback
+      const ageInput = document.getElementById('age') as HTMLInputElement
+      if (ageInput) {
+        setTimeout(() => {
+          ageInput.focus()
+        }, 100)
+      }
+    }
+  }, [step])
+
+  // Focus on initial mount
+  useEffect(() => {
+    const ageInput = document.getElementById('age') as HTMLInputElement
+    if (ageInput) {
+      setTimeout(() => {
+        ageInput.focus()
+      }, 100)
+    }
+  }, [])
 
   const basicForm = useForm<BasicInfoFormData>({
     resolver: zodResolver(basicInfoSchema),
+    defaultValues: {
+      age: undefined,
+      gender: undefined,
+      height: undefined,
+      weight: undefined,
+      activityLevel: undefined,
+    },
+    mode: 'onSubmit'
   })
 
   const preferencesForm = useForm<PreferencesFormData>({
@@ -84,6 +130,16 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
     setBasicInfo(data)
     setStep(2)
   }
+
+  // Focus goals input when moving to step 2
+  useEffect(() => {
+    if (step === 2 && goalsInputRef.current) {
+      setTimeout(() => {
+        goalsInputRef.current?.focus()
+      }, 100)
+    }
+  }, [step])
+
 
   const onPreferencesSubmit = async (data: PreferencesFormData) => {
     if (basicInfo) {
@@ -129,7 +185,9 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               <Input
                 id="age"
                 type="number"
-                {...basicForm.register("age", { valueAsNumber: true })}
+                {...basicForm.register("age", {
+                  valueAsNumber: true,
+                })}
               />
               {basicForm.formState.errors.age && (
                 <p className="text-sm text-destructive">
@@ -234,6 +292,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               control={preferencesForm.control}
               render={({ field }) => (
                 <Combobox
+                  ref={goalsInputRef}
                   options={goalsOptions}
                   value={field.value}
                   onValueChange={field.onChange}
