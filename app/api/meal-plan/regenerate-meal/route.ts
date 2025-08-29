@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { regenerateMeal } from "@/lib/meal-generation"
+import { regenerateMeal, regenerateShoppingList } from "@/lib/meal-generation"
 import { UserProfileSchema } from "@/lib/schemas"
 
 // Schema for regenerate meal request
@@ -15,6 +15,16 @@ const RegenerateMealSchema = z.object({
     estimatedCalories: z.number(),
     prepTime: z.number(),
   }),
+  allMeals: z.array(z.object({
+    id: z.string(),
+    day: z.number(),
+    type: z.enum(["breakfast", "lunch", "dinner"]),
+    name: z.string(),
+    description: z.string(),
+    ingredients: z.array(z.string()),
+    estimatedCalories: z.number(),
+    prepTime: z.number(),
+  })),
   userProfile: UserProfileSchema,
   context: z.string().optional(),
 })
@@ -35,7 +45,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { meal, userProfile, context } = validationResult.data
+    const { meal, allMeals, userProfile, context } = validationResult.data
 
     // Create a complete UserProfile with required fields
     const completeProfile = {
@@ -47,7 +57,18 @@ export async function POST(request: NextRequest) {
     // Regenerate the meal
     const newMeal = await regenerateMeal(meal, completeProfile, context)
 
-    return NextResponse.json(newMeal)
+    // Update the meal in the allMeals array
+    const updatedMeals = allMeals.map(m => 
+      m.id === meal.id ? newMeal : m
+    )
+
+    // Regenerate shopping list with updated meals
+    const newShoppingList = await regenerateShoppingList(updatedMeals, completeProfile)
+
+    return NextResponse.json({
+      meal: newMeal,
+      shoppingList: newShoppingList,
+    })
 
   } catch (error) {
     console.error("Meal regeneration error:", error)

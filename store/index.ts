@@ -23,6 +23,8 @@ interface MealPlanState {
 
   // Meal operations
   updateMeal: (updatedMeal: Meal) => void
+  updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: string[]) => void
+  updateShoppingList: (shoppingList: string[]) => void
   clearMealPlan: () => void
   clearAll: () => void
 }
@@ -79,6 +81,45 @@ export const useMealPlanStore = create<MealPlanState>()(
             },
             false,
             "updateMeal"
+          )
+        },
+
+        updateMealAndShoppingList: (updatedMeal: Meal, newShoppingList: string[]) => {
+          const { currentMealPlan } = get()
+          if (!currentMealPlan) return
+
+          const updatedMeals = currentMealPlan.meals.map((meal) =>
+            meal.id === updatedMeal.id ? updatedMeal : meal
+          )
+
+          set(
+            {
+              currentMealPlan: {
+                ...currentMealPlan,
+                meals: updatedMeals,
+                shoppingList: newShoppingList,
+                updatedAt: new Date(),
+              },
+            },
+            false,
+            "updateMealAndShoppingList"
+          )
+        },
+
+        updateShoppingList: (shoppingList: string[]) => {
+          const { currentMealPlan } = get()
+          if (!currentMealPlan) return
+
+          set(
+            {
+              currentMealPlan: {
+                ...currentMealPlan,
+                shoppingList,
+                updatedAt: new Date(),
+              },
+            },
+            false,
+            "updateShoppingList"
           )
         },
 

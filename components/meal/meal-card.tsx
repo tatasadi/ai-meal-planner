@@ -16,7 +16,6 @@ export function MealCard({
   isRegenerating,
   onClick,
 }: MealCardProps) {
-  
   const mealTypeConfig = {
     breakfast: {
       gradient: "meal-card-gradient-breakfast",
@@ -45,7 +44,7 @@ export function MealCard({
       className={`card-hover ${config.gradient} shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group border-0 h-full flex flex-col cursor-pointer`}
       onClick={onClick}
     >
-      <CardHeader className="pb-4 relative">
+      <CardHeader className="relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="text-2xl">{config.icon}</div>
@@ -57,12 +56,6 @@ export function MealCard({
               </CardTitle>
               <p className="text-xs text-text-subtle">Day {meal.day}</p>
             </div>
-          </div>
-
-          <div className="px-3 py-1 rounded-full backdrop-blur-sm shadow-sm" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
-            <span className="text-xs font-semibold text-badge-text">
-              Day {meal.day}
-            </span>
           </div>
         </div>
       </CardHeader>
@@ -77,11 +70,25 @@ export function MealCard({
 
         {/* Time and Calories */}
         <div className="flex items-center justify-between text-xs mb-4">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
+          <div
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text"
+            style={{
+              backgroundColor: "var(--badge-bg)",
+              borderColor: "var(--badge-border)",
+              border: "1px solid",
+            }}
+          >
             <Clock className="w-3 h-3" />
             <span className="font-semibold">{meal.prepTime}m</span>
           </div>
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
+          <div
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text"
+            style={{
+              backgroundColor: "var(--badge-bg)",
+              borderColor: "var(--badge-border)",
+              border: "1px solid",
+            }}
+          >
             <Zap className="w-3 h-3" />
             <span className="font-semibold">{meal.estimatedCalories} cal</span>
           </div>
@@ -91,24 +98,31 @@ export function MealCard({
         <div className="flex-1 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <Utensils className="w-4 h-4 text-text-medium" />
-            <h4 className="text-sm font-semibold text-text-strong">Ingredients</h4>
+            <h4 className="text-sm font-semibold text-text-strong">
+              Ingredients
+            </h4>
           </div>
 
           <div className="grid grid-cols-1 gap-1.5 mb-4">
-            {meal.ingredients.slice(0, 3).map((ingredient: string, index: number) => (
-              <div key={index} className="flex items-center gap-2">
-                <div
-                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: config.accentColor }}
-                ></div>
-                <span className="text-xs text-text-medium font-medium line-clamp-1">
-                  {ingredient}
-                </span>
-              </div>
-            ))}
+            {meal.ingredients
+              .slice(0, 3)
+              .map((ingredient: string, index: number) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: config.accentColor }}
+                  ></div>
+                  <span className="text-xs text-text-medium font-medium line-clamp-1">
+                    {ingredient}
+                  </span>
+                </div>
+              ))}
             {meal.ingredients.length > 3 && (
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: 'var(--text-subtle)'}}></div>
+                <div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ backgroundColor: config.accentColor }}
+                ></div>
                 <span className="text-xs text-text-subtle italic">
                   +{meal.ingredients.length - 3} more ingredients
                 </span>

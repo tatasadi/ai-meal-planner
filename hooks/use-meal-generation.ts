@@ -17,8 +17,9 @@ export function useMealGeneration() {
     setGeneratingMealPlan,
     setRegeneratingMeal,
     setError,
-    updateMeal,
+    updateMealAndShoppingList,
     userProfile,
+    currentMealPlan,
   } = useMealPlanStore()
 
   const generateMealPlan = useCallback(
@@ -60,8 +61,8 @@ export function useMealGeneration() {
 
   const regenerateMeal = useCallback(
     async (meal: Meal, context?: string) => {
-      if (!userProfile) {
-        toast.error("User profile not found. Please try refreshing the page.")
+      if (!userProfile || !currentMealPlan) {
+        toast.error("User profile or meal plan not found. Please try refreshing the page.")
         return
       }
 
@@ -69,13 +70,14 @@ export function useMealGeneration() {
       setRegeneratingMeal(meal.id)
 
       try {
-        const newMeal = await mealPlanAPI.regenerateMeal(
+        const { meal: newMeal, shoppingList } = await mealPlanAPI.regenerateMeal(
           meal,
+          currentMealPlan.meals,
           userProfile,
           context
         )
-        updateMeal(newMeal)
-        toast.success("Meal regenerated successfully!")
+        updateMealAndShoppingList(newMeal, shoppingList)
+        toast.success("Meal and shopping list updated successfully!")
       } catch (error) {
         console.error("Meal regeneration failed:", error)
 
@@ -97,7 +99,7 @@ export function useMealGeneration() {
         setRegeneratingMeal(null)
       }
     },
-    [userProfile, setError, setRegeneratingMeal, updateMeal]
+    [userProfile, currentMealPlan, setError, setRegeneratingMeal, updateMealAndShoppingList]
   )
 
   const { isGeneratingMealPlan, regeneratingMealId, error } = useMealPlanStore()

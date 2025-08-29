@@ -45,9 +45,10 @@ export const mealPlanAPI = {
 
   async regenerateMeal(
     meal: Meal,
+    allMeals: Meal[],
     userProfile: UserProfile,
     context?: string
-  ): Promise<Meal> {
+  ): Promise<{ meal: Meal; shoppingList: string[] }> {
     const response = await fetch("/api/meal-plan/regenerate-meal", {
       method: "POST",
       headers: {
@@ -55,12 +56,13 @@ export const mealPlanAPI = {
       },
       body: JSON.stringify({
         meal,
+        allMeals,
         userProfile,
         context,
       }),
     })
 
-    return handleResponse<Meal>(response)
+    return handleResponse<{ meal: Meal; shoppingList: string[] }>(response)
   },
 }
 

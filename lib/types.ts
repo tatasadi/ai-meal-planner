@@ -24,6 +24,7 @@ export interface MealPlan {
   title: string
   duration: number // days
   meals: Meal[]
+  shoppingList: string[] // AI-generated consolidated shopping list
   createdAt: Date
   updatedAt: Date
 }

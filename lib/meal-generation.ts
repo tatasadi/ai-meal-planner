@@ -17,6 +17,7 @@ const MealPlanResponseSchema = z.object({
       prepTime: z.number(),
     })
   ),
+  shoppingList: z.array(z.string()),
 })
 
 // Helper function to clean AI response text and parse JSON
@@ -126,6 +127,7 @@ Requirements:
 - Respect all dietary restrictions and allergies
 - Avoid disliked foods
 - Match the requested meal complexity level
+- Generate a consolidated shopping list that combines duplicate ingredients with proper quantities
 
 Please create diverse, balanced meals that align with their health goals.
 
@@ -142,6 +144,9 @@ Respond with a JSON object in this exact format:
       "estimatedCalories": number,
       "prepTime": number
     }
+  ],
+  "shoppingList": [
+    "string - consolidated ingredient with total quantity needed (e.g., 'Olive oil (about 1/4 cup total)', 'Chicken breast (2 lbs)', 'Yellow onions (2 medium)')"
   ]
 }`
 }
@@ -190,6 +195,7 @@ export async function generateMealPlan(
       title: object.title,
       duration: 3,
       meals,
+      shoppingList: object.shoppingList,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -272,5 +278,63 @@ Respond with a JSON object in this exact format:
   } catch (error) {
     console.error("Error regenerating meal:", error)
     throw new Error("Failed to regenerate meal. Please try again.")
+  }
+}
+
+// Regenerate shopping list for updated meal plan
+export async function regenerateShoppingList(
+  meals: Meal[],
+  userProfile: UserProfile
+): Promise<string[]> {
+  try {
+    const mealsText = meals.map(meal => 
+      `Day ${meal.day} ${meal.type}: ${meal.name}\nIngredients: ${meal.ingredients.join(", ")}`
+    ).join("\n\n")
+
+    const prompt = `Based on the following meal plan, generate a consolidated shopping list that combines duplicate ingredients with proper quantities:
+
+${mealsText}
+
+User dietary restrictions: ${userProfile.dietaryRestrictions.join(", ") || "None"}
+User allergies: ${userProfile.allergies.join(", ") || "None"}
+
+Create a practical shopping list that:
+- Combines duplicate ingredients (e.g., if multiple meals use olive oil, show total amount needed)
+- Shows realistic quantities for grocery shopping
+- Groups similar items when appropriate
+- Uses clear, practical language
+
+Respond with a JSON object in this exact format:
+{
+  "shoppingList": [
+    "string - consolidated ingredient with total quantity needed"
+  ]
+}`
+
+    const { text } = await generateText({
+      model,
+      prompt,
+      temperature: 0.5,
+    })
+
+    // Parse the JSON response
+    let parsedResponse
+    try {
+      parsedResponse = parseAIResponse(text)
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", text)
+      throw new Error("Invalid response format from AI")
+    }
+
+    // Validate with Zod schema
+    const shoppingListSchema = z.object({
+      shoppingList: z.array(z.string()),
+    })
+    const object = shoppingListSchema.parse(parsedResponse)
+
+    return object.shoppingList
+  } catch (error) {
+    console.error("Error regenerating shopping list:", error)
+    throw new Error("Failed to regenerate shopping list. Please try again.")
   }
 }

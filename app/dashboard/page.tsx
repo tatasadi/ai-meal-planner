@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { MealCard } from "@/components/meal/meal-card"
 import { MealDetailsDialog } from "@/components/meal/meal-details-dialog"
 import { ChatInterface } from "@/components/chat/chat-interface"
+import { ShoppingListDialog } from "@/components/ui/shopping-list-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RefreshCw, AlertCircle } from "lucide-react"
@@ -32,9 +33,15 @@ export default function DashboardPage() {
   const generateGroceryList = () => {
     if (!currentMealPlan) return []
     
-    const allIngredients = currentMealPlan.meals.flatMap(meal => meal.ingredients)
-    const uniqueIngredients = Array.from(new Set(allIngredients))
-    return uniqueIngredients.slice(0, 10) // Show first 10 unique ingredients
+    // Use AI-generated shopping list, with fallback for backward compatibility
+    if (currentMealPlan.shoppingList?.length) {
+      return currentMealPlan.shoppingList.slice(0, 5) // Show first 5 items as preview
+    } else {
+      // Fallback for old meal plans without shopping lists
+      const allIngredients = currentMealPlan.meals.flatMap(meal => meal.ingredients)
+      const uniqueIngredients = Array.from(new Set(allIngredients))
+      return uniqueIngredients.slice(0, 5)
+    }
   }
 
   const groceryItems = generateGroceryList()
@@ -217,39 +224,10 @@ export default function DashboardPage() {
               />
             </Card>
 
-            <Card className="card-elevated border-0 shadow-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-chart-1/10 flex items-center justify-center">
-                    <span className="text-xs">🛒</span>
-                  </div>
-                  Shopping List
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Generated from your meal plan
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {groceryItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3 text-sm p-2">
-                      <div className="w-4 h-4 rounded border-2 border-primary/30 flex items-center justify-center">
-                        <div className="w-2 h-2 rounded-full bg-primary/0"></div>
-                      </div>
-                      <span className="text-foreground/90">{item}</span>
-                    </div>
-                  ))}
-                  {currentMealPlan && currentMealPlan.meals.flatMap(m => m.ingredients).length > groceryItems.length && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <div className="w-4 h-4"></div>
-                      <span className="text-muted-foreground italic">
-                        +{currentMealPlan.meals.flatMap(m => m.ingredients).length - groceryItems.length} more items
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <ShoppingListDialog 
+              mealPlan={currentMealPlan}
+              previewItems={groceryItems}
+            />
           </div>
         </div>
 
