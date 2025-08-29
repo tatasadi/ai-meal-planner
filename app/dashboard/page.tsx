@@ -17,7 +17,7 @@ import type { Meal, ChatMessage } from "@/lib/types"
 export default function DashboardPage() {
   const router = useRouter()
   const { currentMealPlan, userProfile } = useMealPlanStore()
-  const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, isRegeneratingMeal, error } = useMealGeneration()
+  const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, regeneratingMealId, error } = useMealGeneration()
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null)
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false)
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                         <MealCard
                           meal={meal}
                           onRegenerate={() => handleRegenerateMeal(meal.id)}
-                          isRegenerating={isRegeneratingMeal}
+                          isRegenerating={regeneratingMealId === meal.id}
                           onClick={() => handleMealClick(meal)}
                         />
                       </div>
@@ -232,11 +232,11 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="space-y-3">
                   {groceryItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3 text-sm group hover:bg-white/5 p-2 rounded-lg transition-colors cursor-pointer">
-                      <div className="w-4 h-4 rounded border-2 border-primary/30 flex items-center justify-center hover:border-primary transition-colors group-hover:border-primary/50">
-                        <div className="w-2 h-2 rounded-full bg-primary/0 group-hover:bg-primary/60 transition-colors"></div>
+                    <div key={index} className="flex items-center gap-3 text-sm p-2">
+                      <div className="w-4 h-4 rounded border-2 border-primary/30 flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-primary/0"></div>
                       </div>
-                      <span className="text-foreground/90 group-hover:text-foreground">{item}</span>
+                      <span className="text-foreground/90">{item}</span>
                     </div>
                   ))}
                   {currentMealPlan && currentMealPlan.meals.flatMap(m => m.ingredients).length > groceryItems.length && (
@@ -259,7 +259,7 @@ export default function DashboardPage() {
           isOpen={isMealDialogOpen}
           onOpenChange={setIsMealDialogOpen}
           onRegenerate={handleMealDialogRegenerate}
-          isRegenerating={isRegeneratingMeal}
+          isRegenerating={selectedMeal ? regeneratingMealId === selectedMeal.id : false}
         />
       </div>
     </div>

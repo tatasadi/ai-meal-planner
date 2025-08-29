@@ -24,20 +24,20 @@ export function MealDetailsDialog({
     breakfast: {
       gradient: "meal-card-gradient-breakfast",
       icon: "🌅",
-      color: "text-pink-400",
-      accentColor: "oklch(0.75 0.18 350)",
+      color: "text-meal-breakfast",
+      accentColor: "var(--meal-breakfast)",
     },
     lunch: {
       gradient: "meal-card-gradient-lunch",
       icon: "☀️",
-      color: "text-blue-400",
-      accentColor: "oklch(0.72 0.18 210)",
+      color: "text-meal-lunch",
+      accentColor: "var(--meal-lunch)",
     },
     dinner: {
       gradient: "meal-card-gradient-dinner",
       icon: "🌙",
-      color: "text-purple-400",
-      accentColor: "oklch(0.74 0.16 280)",
+      color: "text-meal-dinner",
+      accentColor: "var(--meal-dinner)",
     },
   }
 

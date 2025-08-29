@@ -21,20 +21,20 @@ export function MealCard({
     breakfast: {
       gradient: "meal-card-gradient-breakfast",
       icon: "🌅",
-      color: "text-pink-400",
-      accentColor: "oklch(0.75 0.18 350)",
+      color: "text-meal-breakfast",
+      accentColor: "var(--meal-breakfast)",
     },
     lunch: {
       gradient: "meal-card-gradient-lunch",
       icon: "☀️",
-      color: "text-blue-400",
-      accentColor: "oklch(0.72 0.18 210)",
+      color: "text-meal-lunch",
+      accentColor: "var(--meal-lunch)",
     },
     dinner: {
       gradient: "meal-card-gradient-dinner",
       icon: "🌙",
-      color: "text-purple-400",
-      accentColor: "oklch(0.74 0.16 280)",
+      color: "text-meal-dinner",
+      accentColor: "var(--meal-dinner)",
     },
   }
 
@@ -55,12 +55,12 @@ export function MealCard({
               >
                 {meal.type}
               </CardTitle>
-              <p className="text-xs text-white/60">Day {meal.day}</p>
+              <p className="text-xs text-text-subtle">Day {meal.day}</p>
             </div>
           </div>
 
-          <div className="px-3 py-1 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 shadow-sm">
-            <span className="text-xs font-semibold text-white">
+          <div className="px-3 py-1 rounded-full backdrop-blur-sm shadow-sm" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
+            <span className="text-xs font-semibold text-badge-text">
               Day {meal.day}
             </span>
           </div>
@@ -70,18 +70,18 @@ export function MealCard({
       <CardContent className="flex flex-col h-full p-4">
         {/* Meal Title - Clamped to 2 lines */}
         <div className="mb-4">
-          <h3 className="font-semibold text-lg leading-tight text-white group-hover:text-white/90 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-lg leading-tight text-text-strong group-hover:text-foreground transition-colors line-clamp-2">
             {meal.name}
           </h3>
         </div>
 
         {/* Time and Calories */}
         <div className="flex items-center justify-between text-xs mb-4">
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-black/30 backdrop-blur-sm border border-white/20 text-white">
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
             <Clock className="w-3 h-3" />
             <span className="font-semibold">{meal.prepTime}m</span>
           </div>
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-black/30 backdrop-blur-sm border border-white/20 text-white">
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg backdrop-blur-sm text-badge-text" style={{backgroundColor: 'var(--badge-bg)', borderColor: 'var(--badge-border)', border: '1px solid'}}>
             <Zap className="w-3 h-3" />
             <span className="font-semibold">{meal.estimatedCalories} cal</span>
           </div>
@@ -90,8 +90,8 @@ export function MealCard({
         {/* Ingredients Preview */}
         <div className="flex-1 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
-            <Utensils className="w-4 h-4 text-white/80" />
-            <h4 className="text-sm font-semibold text-white">Ingredients</h4>
+            <Utensils className="w-4 h-4 text-text-medium" />
+            <h4 className="text-sm font-semibold text-text-strong">Ingredients</h4>
           </div>
 
           <div className="grid grid-cols-1 gap-1.5 mb-4">
@@ -101,22 +101,22 @@ export function MealCard({
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: config.accentColor }}
                 ></div>
-                <span className="text-xs text-white/90 font-medium line-clamp-1">
+                <span className="text-xs text-text-medium font-medium line-clamp-1">
                   {ingredient}
                 </span>
               </div>
             ))}
             {meal.ingredients.length > 3 && (
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-white/30"></div>
-                <span className="text-xs text-white/70 italic">
+                <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: 'var(--text-subtle)'}}></div>
+                <span className="text-xs text-text-subtle italic">
                   +{meal.ingredients.length - 3} more ingredients
                 </span>
               </div>
             )}
           </div>
 
-          <div className="text-xs text-white/60 italic mb-4">
+          <div className="text-xs text-text-subtle italic mb-4">
             Click to view full details
           </div>
         </div>

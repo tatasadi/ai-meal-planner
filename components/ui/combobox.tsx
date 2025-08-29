@@ -85,7 +85,23 @@ export function Combobox({
                     onValueChange?.(option.value)
                     setOpen(false)
                   }}
-                  className="cursor-pointer hover:bg-blue-100 hover:text-blue-900 aria-selected:bg-blue-500 aria-selected:text-white dark:hover:bg-blue-900 dark:hover:text-blue-100 dark:aria-selected:bg-blue-600"
+                  className="cursor-pointer transition-colors"
+                  style={{
+                    '--hover-bg': 'var(--combobox-hover)',
+                    '--hover-text': 'var(--combobox-hover-text)',
+                    '--selected-bg': 'var(--combobox-selected)',
+                    '--selected-text': 'var(--combobox-selected-text)'
+                  } as React.CSSProperties & Record<string, string>}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--combobox-hover)'
+                    e.currentTarget.style.color = 'var(--combobox-hover-text)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (value !== option.value) {
+                      e.currentTarget.style.backgroundColor = ''
+                      e.currentTarget.style.color = ''
+                    }
+                  }}
                 >
                   <Check
                     className={cn(

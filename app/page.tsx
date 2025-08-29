@@ -45,7 +45,7 @@ export default function Home() {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mt-20 animate-slide-up">
-            <Card className="p-8 text-left card-hover card-elevated border-0 shadow-lg">
+            <Card className="p-8 text-left card-elevated border-0 shadow-lg">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-6 border border-primary/20">
                 <Sparkles className="w-6 h-6 text-primary" />
               </div>
@@ -55,7 +55,7 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="p-8 text-left card-hover card-elevated border-0 shadow-lg">
+            <Card className="p-8 text-left card-elevated border-0 shadow-lg">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-2/20 to-chart-2/10 flex items-center justify-center mb-6 border border-chart-2/20">
                 <Heart className="w-6 h-6 text-chart-2" />
               </div>
@@ -65,7 +65,7 @@ export default function Home() {
               </p>
             </Card>
 
-            <Card className="p-8 text-left card-hover card-elevated border-0 shadow-lg">
+            <Card className="p-8 text-left card-elevated border-0 shadow-lg">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-chart-1/20 to-chart-1/10 flex items-center justify-center mb-6 border border-chart-1/20">
                 <ShoppingCart className="w-6 h-6 text-chart-1" />
               </div>
@@ -77,7 +77,7 @@ export default function Home() {
           </div>
 
           {/* Stats Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-16 border-t border-border/50">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-16 border-t-2 border-border/80">
             <div className="text-center space-y-2">
               <div className="text-3xl font-bold text-primary">10k+</div>
               <div className="text-sm text-muted-foreground">Meal Plans Created</div>

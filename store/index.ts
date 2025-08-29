@@ -13,9 +13,9 @@ interface MealPlanState {
 
   // Loading states
   isGeneratingMealPlan: boolean
-  isRegeneratingMeal: boolean
+  regeneratingMealId: string | null
   setGeneratingMealPlan: (loading: boolean) => void
-  setRegeneratingMeal: (loading: boolean) => void
+  setRegeneratingMeal: (mealId: string | null) => void
 
   // Error handling
   error: string | null
@@ -35,7 +35,7 @@ export const useMealPlanStore = create<MealPlanState>()(
         userProfile: null,
         currentMealPlan: null,
         isGeneratingMealPlan: false,
-        isRegeneratingMeal: false,
+        regeneratingMealId: null,
         error: null,
 
         // User profile actions
@@ -54,8 +54,8 @@ export const useMealPlanStore = create<MealPlanState>()(
             "setGeneratingMealPlan"
           ),
 
-        setRegeneratingMeal: (loading: boolean) =>
-          set({ isRegeneratingMeal: loading }, false, "setRegeneratingMeal"),
+        setRegeneratingMeal: (mealId: string | null) =>
+          set({ regeneratingMealId: mealId }, false, "setRegeneratingMeal"),
 
         // Error handling
         setError: (error: string | null) => set({ error }, false, "setError"),
@@ -92,7 +92,7 @@ export const useMealPlanStore = create<MealPlanState>()(
               userProfile: null,
               currentMealPlan: null,
               isGeneratingMealPlan: false,
-              isRegeneratingMeal: false,
+              regeneratingMealId: null,
               error: null,
             },
             false,

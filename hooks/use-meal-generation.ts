@@ -66,7 +66,7 @@ export function useMealGeneration() {
       }
 
       setError(null)
-      setRegeneratingMeal(true)
+      setRegeneratingMeal(meal.id)
 
       try {
         const newMeal = await mealPlanAPI.regenerateMeal(
@@ -94,19 +94,19 @@ export function useMealGeneration() {
         setError(errorMessage)
         toast.error(errorMessage)
       } finally {
-        setRegeneratingMeal(false)
+        setRegeneratingMeal(null)
       }
     },
     [userProfile, setError, setRegeneratingMeal, updateMeal]
   )
 
-  const { isGeneratingMealPlan, isRegeneratingMeal, error } = useMealPlanStore()
+  const { isGeneratingMealPlan, regeneratingMealId, error } = useMealPlanStore()
 
   return {
     generateMealPlan,
     regenerateMeal,
     isGeneratingMealPlan,
-    isRegeneratingMeal,
+    regeneratingMealId,
     error,
   }
 }

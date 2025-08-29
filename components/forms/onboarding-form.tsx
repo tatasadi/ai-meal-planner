@@ -115,7 +115,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
   if (step === 1) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto glass-effect border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Tell us about yourself</CardTitle>
         </CardHeader>

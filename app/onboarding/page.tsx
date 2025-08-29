@@ -20,9 +20,7 @@ export default function OnboardingPage() {
           </p>
         </div>
         
-        <div className="glass-effect rounded-2xl p-8 shadow-xl border-0">
-          <OnboardingForm onComplete={handleComplete} />
-        </div>
+        <OnboardingForm onComplete={handleComplete} />
       </div>
     </div>
   )
