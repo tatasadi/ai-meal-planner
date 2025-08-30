@@ -8,7 +8,7 @@ import { ChatInterface } from "@/components/chat/chat-interface"
 import { ShoppingListDialog } from "@/components/ui/shopping-list-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RefreshCw, AlertCircle } from "lucide-react"
+import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMealPlanStore } from "@/store"
 import { useMealGeneration } from "@/hooks/use-meal-generation"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null)
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false)
+  const [currentDay, setCurrentDay] = useState(1)
   
   const handleRegenerateAll = async () => {
     if (userProfile) {
@@ -138,6 +139,15 @@ export default function DashboardPage() {
     }
   }
 
+  const handlePrevDay = () => {
+    setCurrentDay(prev => Math.max(1, prev - 1))
+  }
+
+  const handleNextDay = () => {
+    const totalDays = Object.keys(groupedMeals).length
+    setCurrentDay(prev => Math.min(totalDays, prev + 1))
+  }
+
   // Get the current selected meal from the store (updated after regeneration)
   const selectedMeal = selectedMealId ? meals.find(m => m.id === selectedMealId) || null : null
 
@@ -148,12 +158,15 @@ export default function DashboardPage() {
     return acc
   }, {} as Record<string, Meal[]>)
 
+  const currentDayMeals = groupedMeals[`Day ${currentDay}`] || []
+  const totalDays = Object.keys(groupedMeals).length
+
   return (
     <PageErrorBoundary>
       <div className="min-h-screen gradient-bg">
         <div className="max-w-7xl mx-auto p-6">
           <header className="mb-12 animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                   Your Meal Plan
@@ -184,42 +197,70 @@ export default function DashboardPage() {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8 animate-slide-up">
-              {Object.entries(groupedMeals).map(([day, dayMeals], dayIndex) => (
-                <ComponentErrorBoundary key={day}>
-                  <Card className="card-elevated border-0 shadow-xl" style={{ animationDelay: `${dayIndex * 100}ms` }}>
-                    <CardHeader className="pb-6">
-                      <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2 animate-slide-up">
+              <ComponentErrorBoundary>
+                <Card className="card-elevated border-0 shadow-xl">
+                  <CardHeader className="pb-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-bold text-primary">{dayIndex + 1}</span>
+                          <span className="text-sm font-bold text-primary">{currentDay}</span>
                         </div>
-                        {day}
-                      </CardTitle>
-                      <p className="text-muted-foreground">Your personalized meals for the day</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-                        {dayMeals.map((meal, mealIndex) => (
-                          <ComponentErrorBoundary key={meal.id}>
-                            <div 
-                              className="animate-scale-in h-full"
-                              style={{ animationDelay: `${(dayIndex * 3 + mealIndex) * 100}ms` }}
-                            >
-                              <MealCard
-                                meal={meal}
-                                onRegenerate={() => handleRegenerateMeal(meal.id)}
-                                isRegenerating={regeneratingMealId === meal.id}
-                                onClick={() => handleMealClick(meal)}
-                              />
-                            </div>
-                          </ComponentErrorBoundary>
-                        ))}
+                        <div>
+                          <CardTitle className="text-2xl font-bold text-foreground">
+                            Day {currentDay}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {currentDay} of {totalDays}
+                          </p>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </ComponentErrorBoundary>
-              ))}
+                      
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePrevDay}
+                          disabled={currentDay === 1}
+                          className="h-9 w-9 p-0"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleNextDay}
+                          disabled={currentDay === totalDays}
+                          className="h-9 w-9 p-0"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mt-2">Your personalized meals for the day</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+                      {currentDayMeals.map((meal, mealIndex) => (
+                        <ComponentErrorBoundary key={meal.id}>
+                          <div 
+                            className="animate-scale-in h-full"
+                            style={{ animationDelay: `${mealIndex * 100}ms` }}
+                          >
+                            <MealCard
+                              meal={meal}
+                              onRegenerate={() => handleRegenerateMeal(meal.id)}
+                              isRegenerating={regeneratingMealId === meal.id}
+                              onClick={() => handleMealClick(meal)}
+                            />
+                          </div>
+                        </ComponentErrorBoundary>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </ComponentErrorBoundary>
             </div>
 
             <div className="space-y-6 animate-slide-up" style={{ animationDelay: '300ms' }}>
