@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   sanitizeInput,
   sanitizeArray,
@@ -9,27 +9,7 @@ import {
   sanitizeIngredients,
 } from '@/lib/sanitization'
 
-// Mock DOMPurify
-vi.mock('dompurify', () => ({
-  default: {
-    sanitize: vi.fn((input: string) => {
-      // Remove script tags and alert() calls for test purposes
-      return input
-        .replace(/<script[^>]*>.*?<\/script>/gi, '')
-        .replace(/alert\([^)]*\)/gi, '')
-        .replace(/<[^>]*script[^>]*>/gi, '')
-    })
-  }
-}))
-
 describe('sanitization', () => {
-  let mockSanitize: ReturnType<typeof vi.fn>
-
-  beforeEach(async () => {
-    const DOMPurify = await import('dompurify')
-    mockSanitize = vi.mocked(DOMPurify.default.sanitize)
-    mockSanitize.mockClear()
-  })
 
   describe('sanitizeInput', () => {
     it('should sanitize basic text input', () => {
@@ -37,11 +17,6 @@ describe('sanitization', () => {
       const result = sanitizeInput(input)
       
       expect(result).toBe('Hello World')
-      expect(mockSanitize).toHaveBeenCalledWith(input, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-      })
     })
 
     it('should handle empty strings', () => {
@@ -58,25 +33,21 @@ describe('sanitization', () => {
       const input = '  Hello World  '
       const result = sanitizeInput(input)
       
-      expect(mockSanitize).toHaveBeenCalledWith('Hello World', expect.any(Object))
+      expect(result).toBe('Hello World')
     })
 
-    it('should use different sanitization levels', () => {
-      const input = '<b>Bold text</b>'
+    it('should escape HTML for text level', () => {
+      const input = '<script>alert("xss")</script>Hello'
+      const result = sanitizeInput(input, 'text')
       
-      sanitizeInput(input, 'text')
-      expect(mockSanitize).toHaveBeenCalledWith(input, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-      })
+      expect(result).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;Hello')
+    })
 
-      sanitizeInput(input, 'basic')
-      expect(mockSanitize).toHaveBeenCalledWith(input, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-      })
+    it('should allow safe HTML for basic level', () => {
+      const input = '<b>Bold</b> <script>alert("xss")</script> text'
+      const result = sanitizeInput(input, 'basic')
+      
+      expect(result).toBe('<b>Bold</b>  text')
     })
   })
 
@@ -85,8 +56,7 @@ describe('sanitization', () => {
       const inputs = ['Hello', 'World', '<script>alert("xss")</script>']
       const result = sanitizeArray(inputs)
       
-      expect(result).toEqual(['Hello', 'World'])
-      expect(mockSanitize).toHaveBeenCalledTimes(3)
+      expect(result).toEqual(['Hello', 'World', '&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;'])
     })
 
     it('should filter out empty results', () => {
@@ -117,10 +87,10 @@ describe('sanitization', () => {
 
       const result = sanitizeUserProfile(profile)
 
-      expect(result.preferences.dislikedFoods).toEqual(['spinach'])
-      expect(result.preferences.cuisineTypes).toEqual(['italian', 'mexican'])
-      expect(result.dietaryRestrictions).toEqual(['vegetarian', '<b>gluten-free</b>'])
-      expect(result.allergies).toEqual(['nuts', 'shellfish'])
+      expect(result.preferences.dislikedFoods).toEqual(['&lt;script&gt;evil&lt;&#x2F;script&gt;', 'spinach'])
+      expect(result.preferences.cuisineTypes).toEqual(['italian&lt;script&gt;', 'mexican'])
+      expect(result.dietaryRestrictions).toEqual(['vegetarian', '&lt;b&gt;gluten-free&lt;&#x2F;b&gt;'])
+      expect(result.allergies).toEqual(['nuts&lt;script&gt;', 'shellfish'])
       expect(result.otherField).toBe('unchanged')
       expect(result.preferences.other).toBe('field')
     })
@@ -146,11 +116,7 @@ describe('sanitization', () => {
       const message = '<b>Hello</b> <script>alert("xss")</script> World'
       const result = sanitizeChatMessage(message)
       
-      expect(mockSanitize).toHaveBeenCalledWith(message, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-      })
+      expect(result).toBe('<b>Hello</b>  World')
     })
   })
 
@@ -185,7 +151,7 @@ describe('sanitization', () => {
       const input = '<script>alert("xss")</script>Hello World'
       const result = validateAndSanitizeFormInput(input)
       
-      expect(result.value).toBe('Hello World')
+      expect(result.value).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;&#x2F;script&gt;Hello World')
     })
   })
 
@@ -194,11 +160,7 @@ describe('sanitization', () => {
       const description = '<p>Delicious <b>pasta</b></p><script>alert("xss")</script>'
       const result = sanitizeMealDescription(description)
       
-      expect(mockSanitize).toHaveBeenCalledWith(description, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-      })
+      expect(result).toBe('<p>Delicious <b>pasta</b></p>')
     })
   })
 
@@ -207,8 +169,7 @@ describe('sanitization', () => {
       const ingredients = ['2 cups flour', '<script>evil</script> salt', '1 egg']
       const result = sanitizeIngredients(ingredients)
       
-      expect(result).toEqual(['2 cups flour', ' salt', '1 egg'])
-      expect(mockSanitize).toHaveBeenCalledTimes(3)
+      expect(result).toEqual(['2 cups flour', '&lt;script&gt;evil&lt;&#x2F;script&gt; salt', '1 egg'])
     })
   })
 })

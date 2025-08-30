@@ -1,6 +1,24 @@
 // Edge-compatible sanitization (DOMPurify doesn't work in Edge runtime)
 // Simple but effective sanitization for basic security
 
+const SANITIZATION_CONFIGS = {
+  text: {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+  },
+  basic: {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p'],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+  },
+  rich: {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'u', 'br', 'p', 'ul', 'ol', 'li', 'h3', 'h4'],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+  }
+} as const
+
 /**
  * Sanitize user input to prevent XSS attacks (Edge runtime compatible)
  * @param input - The user input to sanitize
@@ -31,6 +49,14 @@ export function sanitizeInput(input: string, level: "text" | "basic" | "rich" = 
   
   // For basic level, allow some safe HTML tags
   else if (level === "basic") {
+    // First remove dangerous tags with their content
+    sanitized = sanitized
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/<style[^>]*>.*?<\/style>/gi, '')
+      .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+    
     // Remove all HTML except safe tags
     sanitized = sanitized.replace(/<(?!\/?(?:b|i|em|strong|u|br|p)\b)[^>]*>/gi, "")
     
@@ -43,6 +69,14 @@ export function sanitizeInput(input: string, level: "text" | "basic" | "rich" = 
   
   // For rich level, allow more HTML tags (future use)
   else if (level === "rich") {
+    // First remove dangerous tags with their content
+    sanitized = sanitized
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/<style[^>]*>.*?<\/style>/gi, '')
+      .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+    
     // Remove all HTML except safe tags
     sanitized = sanitized.replace(/<(?!\/?(?:b|i|em|strong|u|br|p|ul|ol|li|h3|h4)\b)[^>]*>/gi, "")
     
