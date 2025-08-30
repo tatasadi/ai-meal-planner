@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMealPlanStore } from "@/store"
 import { useMealGeneration } from "@/hooks/use-meal-generation"
+import { useChatWithActions } from "@/hooks/use-chat-with-actions"
 import { LoadingState } from "@/components/ui/loading-state"
 import { PageErrorBoundary, ComponentErrorBoundary } from "@/components/error/error-boundary"
 import type { Meal, ChatMessage } from "@/lib/types"
@@ -18,12 +19,38 @@ import type { Meal, ChatMessage } from "@/lib/types"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { currentMealPlan, userProfile } = useMealPlanStore()
+  const { currentMealPlan, userProfile, updateMealPlan, hasHydrated } = useMealPlanStore()
   const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, regeneratingMealId, error } = useMealGeneration()
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null)
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false)
   const [currentDay, setCurrentDay] = useState(1)
+  
+  // Chat functionality with actions
+  const {
+    messages: chatMessages,
+    sendMessage,
+    isLoading: isChatLoading,
+    error: chatError,
+    isProcessingAction,
+    modifyingMealId,
+  } = useChatWithActions({
+    mealPlan: currentMealPlan,
+    userProfile,
+    onMealPlanUpdate: (updatedMeals, updatedShoppingList) => {
+      if (currentMealPlan) {
+        console.log("Dashboard: Updating meal plan with calories:", updatedMeals.map(m => `${m.name}: ${m.estimatedCalories} cal`))
+        
+        const updatedMealPlan = {
+          ...currentMealPlan,
+          meals: updatedMeals,
+          shoppingList: updatedShoppingList,
+          updatedAt: new Date(),
+        }
+        console.log("Dashboard: New meal plan calories:", updatedMealPlan.meals.map(m => `${m.name}: ${m.estimatedCalories} cal`))
+        updateMealPlan(updatedMealPlan)
+      }
+    },
+  })
   
   const handleRegenerateAll = async () => {
     if (userProfile) {
@@ -51,10 +78,11 @@ export default function DashboardPage() {
   const groceryItems = generateGroceryList()
   
   useEffect(() => {
-    if (!currentMealPlan && !userProfile) {
+    // Only redirect after hydration is complete to avoid premature redirects
+    if (hasHydrated && !currentMealPlan && !userProfile) {
       router.push('/onboarding')
     }
-  }, [currentMealPlan, userProfile, router])
+  }, [currentMealPlan, userProfile, router, hasHydrated])
   
   if (isGeneratingMealPlan) {
     return <LoadingState message="Generating your personalized meal plan..." />
@@ -98,27 +126,6 @@ export default function DashboardPage() {
   
   const meals = currentMealPlan.meals
 
-  const handleSendMessage = (message: string) => {
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      userId: "user-1",
-      mealPlanId: "plan-1",
-      role: "user",
-      content: message,
-      timestamp: new Date(),
-    }
-
-    const assistantMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      userId: "user-1",
-      mealPlanId: "plan-1",
-      role: "assistant",
-      content: "I understand you'd like to modify your meal plan. This feature will be connected to AI in the next phase!",
-      timestamp: new Date(),
-    }
-
-    setChatMessages(prev => [...prev, userMessage, assistantMessage])
-  }
 
   const handleRegenerateMeal = async (mealId: string) => {
     const meal = meals.find(m => m.id === mealId)
@@ -242,7 +249,10 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-                      {currentDayMeals.map((meal, mealIndex) => (
+                      {currentDayMeals.map((meal, mealIndex) => {
+                        const isThisMealLoading = regeneratingMealId === meal.id || modifyingMealId === meal.id
+                        console.log(`Meal ${meal.id} loading state:`, isThisMealLoading, {regeneratingMealId, modifyingMealId})
+                        return (
                         <ComponentErrorBoundary key={meal.id}>
                           <div 
                             className="animate-scale-in h-full"
@@ -251,12 +261,13 @@ export default function DashboardPage() {
                             <MealCard
                               meal={meal}
                               onRegenerate={() => handleRegenerateMeal(meal.id)}
-                              isRegenerating={regeneratingMealId === meal.id}
+                              isRegenerating={isThisMealLoading}
                               onClick={() => handleMealClick(meal)}
                             />
                           </div>
                         </ComponentErrorBoundary>
-                      ))}
+                        )
+                      })}
                     </div>
                   </CardContent>
                 </Card>
@@ -268,8 +279,9 @@ export default function DashboardPage() {
                 <Card className="card-elevated border-0 shadow-xl">
                   <ChatInterface
                     messages={chatMessages}
-                    onSendMessage={handleSendMessage}
-                    isLoading={false}
+                    onSendMessage={sendMessage}
+                    isLoading={isChatLoading}
+                    error={chatError}
                   />
                 </Card>
               </ComponentErrorBoundary>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,14 +12,32 @@ interface ChatInterfaceProps {
   messages: ChatMessage[]
   onSendMessage: (message: string) => void
   isLoading?: boolean
+  error?: Error | null
 }
 
 export function ChatInterface({
   messages,
   onSendMessage,
   isLoading = false,
+  error = null,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new messages arrive or streaming completes
+  useEffect(() => {
+    // Check if any message is currently streaming
+    const hasStreamingMessage = messages.some(msg => (msg as any).isStreaming)
+    
+    // Only scroll when not actively streaming or when streaming finishes
+    if (!hasStreamingMessage || !isLoading) {
+      const timeoutId = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+      }, 150)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [messages, isLoading]) // Monitor all message changes and loading state
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,8 +56,8 @@ export function ChatInterface({
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Refine Your Meal Plan</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col">
-        <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-4 bg-muted/20 rounded-md">
+      <CardContent className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4 p-4 bg-muted/20 rounded-md max-h-full">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm py-8">
               <Bot className="w-6 h-6 mx-auto mb-2 opacity-50" />
@@ -96,6 +114,17 @@ export function ChatInterface({
               </div>
             </div>
           )}
+          {error && (
+            <div className="flex items-start gap-2 justify-start">
+              <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center mt-1">
+                <Bot className="w-3 h-3 text-destructive" />
+              </div>
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2 text-sm text-destructive">
+                Sorry, I encountered an error. Please try again.
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
         <form onSubmit={handleSubmit} className="flex items-center gap-2">

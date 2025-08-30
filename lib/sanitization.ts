@@ -1,50 +1,58 @@
-import DOMPurify from "dompurify"
-
-// Configuration for different sanitization levels
-const SANITIZATION_CONFIGS = {
-  // For user input that will be displayed as text (most restrictive)
-  text: {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true,
-  },
-  // For basic HTML content (forms, descriptions)
-  basic: {
-    ALLOWED_TAGS: ["b", "i", "em", "strong", "u", "br", "p"],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true,
-  },
-  // For rich content (if needed in future)
-  rich: {
-    ALLOWED_TAGS: ["b", "i", "em", "strong", "u", "br", "p", "ul", "ol", "li", "h3", "h4"],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true,
-  },
-}
+// Edge-compatible sanitization (DOMPurify doesn't work in Edge runtime)
+// Simple but effective sanitization for basic security
 
 /**
- * Sanitize user input to prevent XSS attacks
+ * Sanitize user input to prevent XSS attacks (Edge runtime compatible)
  * @param input - The user input to sanitize
  * @param level - Sanitization level: 'text', 'basic', or 'rich'
  * @returns Sanitized string safe for display
  */
-export function sanitizeInput(input: string, level: keyof typeof SANITIZATION_CONFIGS = "text"): string {
+export function sanitizeInput(input: string, level: "text" | "basic" | "rich" = "text"): string {
   if (!input || typeof input !== "string") {
     return ""
   }
 
   // Trim whitespace
-  const trimmed = input.trim()
-  if (!trimmed) {
+  let sanitized = input.trim()
+  if (!sanitized) {
     return ""
   }
 
-  // Configure DOMPurify
-  const config = SANITIZATION_CONFIGS[level]
+  // Basic HTML escaping for text level
+  if (level === "text") {
+    sanitized = sanitized
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+      .replace(/\//g, "&#x2F;")
+  }
   
-  // Sanitize the input
-  const sanitized = DOMPurify.sanitize(trimmed, config)
+  // For basic level, allow some safe HTML tags
+  else if (level === "basic") {
+    // Remove all HTML except safe tags
+    sanitized = sanitized.replace(/<(?!\/?(?:b|i|em|strong|u|br|p)\b)[^>]*>/gi, "")
+    
+    // Escape remaining unsafe characters
+    sanitized = sanitized
+      .replace(/&(?!(amp|lt|gt|quot|#x27|#x2F);)/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+  }
   
+  // For rich level, allow more HTML tags (future use)
+  else if (level === "rich") {
+    // Remove all HTML except safe tags
+    sanitized = sanitized.replace(/<(?!\/?(?:b|i|em|strong|u|br|p|ul|ol|li|h3|h4)\b)[^>]*>/gi, "")
+    
+    // Escape remaining unsafe characters
+    sanitized = sanitized
+      .replace(/&(?!(amp|lt|gt|quot|#x27|#x2F);)/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;")
+  }
+
   return sanitized
 }
 
@@ -54,7 +62,7 @@ export function sanitizeInput(input: string, level: keyof typeof SANITIZATION_CO
  * @param level - Sanitization level
  * @returns Array of sanitized strings
  */
-export function sanitizeArray(inputs: string[], level: keyof typeof SANITIZATION_CONFIGS = "text"): string[] {
+export function sanitizeArray(inputs: string[], level: "text" | "basic" | "rich" = "text"): string[] {
   return inputs.map(input => sanitizeInput(input, level)).filter(Boolean)
 }
 

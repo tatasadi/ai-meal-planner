@@ -75,3 +75,29 @@ export function isRateLimitError(error: unknown): boolean {
 export function isValidationError(error: unknown): boolean {
   return error instanceof APIError && error.status === 400
 }
+
+// Generic API client for other endpoints
+export const apiClient = {
+  async post<T>(url: string, data: any): Promise<T> {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+
+    return handleResponse<T>(response)
+  },
+
+  async get<T>(url: string): Promise<T> {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    return handleResponse<T>(response)
+  },
+}

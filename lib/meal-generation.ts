@@ -343,6 +343,112 @@ Respond with a JSON object in this exact format:
   }
 }
 
+// Modify a specific meal based on user requirements
+export async function modifyMeal(
+  meal: Meal,
+  userProfile: UserProfile,
+  modificationRequirements: string,
+  aiChatResponse?: string
+): Promise<Meal> {
+  try {
+    const dailyCalories = calculateDailyCalories(userProfile)
+    let targetCalories = Math.round(dailyCalories / 3)
+    
+    // Extract specific calorie target from AI chat response if available
+    if (aiChatResponse) {
+      const calorieMatch = aiChatResponse.match(/(\d+)\s*calories?/i)
+      if (calorieMatch) {
+        targetCalories = parseInt(calorieMatch[1])
+        console.log(`Using AI-specified calorie target: ${targetCalories} (from: "${calorieMatch[0]}")`)
+      } else {
+        console.log(`No specific calories mentioned in chat response, using calculated target: ${targetCalories}`)
+      }
+    }
+
+    const prompt = `Modify the existing ${meal.type} meal for day ${meal.day} based on the user's request.
+
+Current Meal:
+Name: ${meal.name}
+Description: ${meal.description}
+Ingredients: ${meal.ingredients.join(", ")}
+Calories: ${meal.estimatedCalories}
+Prep Time: ${meal.prepTime} minutes
+
+User Profile:
+- Age: ${userProfile.age}, Gender: ${userProfile.gender}
+- Dietary restrictions: ${userProfile.dietaryRestrictions.join(", ") || "None"}
+- Allergies: ${userProfile.allergies.join(", ") || "None"}  
+- Foods to avoid: ${userProfile.preferences.dislikedFoods.join(", ") || "None"}
+- Meal complexity: ${userProfile.preferences.mealComplexity}
+
+User's Modification Request: "${modificationRequirements}"${aiChatResponse ? `
+
+AI Assistant's Specific Instructions: "${aiChatResponse}"
+CRITICAL: Follow these exact instructions. If the AI said to reduce quantities to specific amounts, use those exact amounts. If the AI said to omit ingredients, remove them completely. If the AI mentioned specific calorie targets, aim for that exact number.` : ''}
+
+Target: ~${targetCalories} calories
+
+Requirements:
+- Follow the AI assistant's specific instructions exactly if provided
+- Modify the meal according to the user's specific request
+- Keep the same meal type (${meal.type}) and day (${meal.day})
+- Maintain nutritional balance and respect dietary restrictions
+- Provide detailed, appetizing description
+- Include specific quantities for all ingredients using METRIC units
+- If ingredients should be omitted (per AI instructions), remove them completely
+- If specific quantities are mentioned (per AI instructions), use those exact amounts
+- If the user wants it "lighter", reduce calories by 15-25%
+- If the user wants it "heartier", increase calories by 15-25%
+- If they dislike specific ingredients, replace them with suitable alternatives
+
+Respond with a JSON object in this exact format:
+{
+  "name": "string - descriptive meal name",
+  "description": "string - detailed, appetizing description of the modified meal", 
+  "ingredients": ["string - ingredient with specific quantity using METRIC units"],
+  "estimatedCalories": number,
+  "prepTime": number
+}`
+
+    const { text } = await generateText({
+      model,
+      prompt,
+      temperature: 0.8,
+    })
+
+    // Parse the JSON response
+    let parsedResponse
+    try {
+      parsedResponse = parseAIResponse(text)
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", text)
+      throw new Error("Invalid response format from AI")
+    }
+
+    // Validate with Zod schema
+    const mealSchema = z.object({
+      name: z.string(),
+      description: z.string(),
+      ingredients: z.array(z.string()),
+      estimatedCalories: z.number(),
+      prepTime: z.number(),
+    })
+    const object = mealSchema.parse(parsedResponse)
+
+    return {
+      ...meal,
+      name: object.name,
+      description: object.description,
+      ingredients: object.ingredients,
+      estimatedCalories: object.estimatedCalories,
+      prepTime: object.prepTime,
+    }
+  } catch (error) {
+    console.error("Error modifying meal:", error)
+    throw new Error("Failed to modify meal. Please try again.")
+  }
+}
+
 // Regenerate shopping list for updated meal plan
 export async function regenerateShoppingList(
   meals: Meal[],

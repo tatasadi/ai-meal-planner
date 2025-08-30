@@ -10,6 +10,10 @@ interface MealPlanState {
   // Meal plan data
   currentMealPlan: MealPlan | null
   setCurrentMealPlan: (plan: MealPlan) => void
+  updateMealPlan: (plan: MealPlan) => void
+
+  // Hydration state
+  hasHydrated: boolean
 
   // Loading states
   isGeneratingMealPlan: boolean
@@ -36,6 +40,7 @@ export const useMealPlanStore = create<MealPlanState>()(
         // Initial state
         userProfile: null,
         currentMealPlan: null,
+        hasHydrated: false,
         isGeneratingMealPlan: false,
         regeneratingMealId: null,
         error: null,
@@ -47,6 +52,9 @@ export const useMealPlanStore = create<MealPlanState>()(
         // Meal plan actions
         setCurrentMealPlan: (plan: MealPlan) =>
           set({ currentMealPlan: plan }, false, "setCurrentMealPlan"),
+
+        updateMealPlan: (plan: MealPlan) =>
+          set({ currentMealPlan: plan }, false, "updateMealPlan"),
 
         // Loading state actions
         setGeneratingMealPlan: (loading: boolean) =>
@@ -146,6 +154,16 @@ export const useMealPlanStore = create<MealPlanState>()(
           userProfile: state.userProfile,
           currentMealPlan: state.currentMealPlan,
         }),
+        onRehydrateStorage: () => (state) => {
+          console.log("Rehydrating store from localStorage:", {
+            hasUserProfile: !!state?.userProfile,
+            hasMealPlan: !!state?.currentMealPlan,
+            mealCount: state?.currentMealPlan?.meals?.length || 0
+          })
+          if (state) {
+            state.hasHydrated = true
+          }
+        },
       }
     ),
     {

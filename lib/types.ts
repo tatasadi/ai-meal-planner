@@ -1,5 +1,3 @@
-// Type definitions from CLAUDE.md
-
 export interface UserProfile {
   id: string
   email: string
