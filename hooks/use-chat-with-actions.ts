@@ -108,7 +108,7 @@ export function useChatWithActions({
       console.log("Final accumulated content:", accumulatedContent)
       console.log("Content length:", accumulatedContent.length)
 
-      // Mark streaming as complete and stop loading indicator
+      // Mark streaming as complete
       setMessages(prev => 
         prev.map(msg => 
           msg.id === assistantMessageId 
@@ -116,7 +116,6 @@ export function useChatWithActions({
             : msg
         )
       )
-      setIsLoading(false) // Stop chat loading indicator
 
       // Always check for actionable responses, even if content seems empty
       if (accumulatedContent.trim()) {
@@ -125,6 +124,9 @@ export function useChatWithActions({
       } else {
         console.log("No content received from AI - this might be a streaming parsing issue")
       }
+      
+      // Stop loading indicator after all processing is complete
+      setIsLoading(false)
 
 
     } catch (error) {
@@ -142,8 +144,6 @@ export function useChatWithActions({
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
     }
   }
 
