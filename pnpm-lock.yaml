@@ -17,6 +17,12 @@ importers:
       '@ai-sdk/react':
         specifier: ^2.0.28
         version: 2.0.28(react@19.1.0)(zod@4.1.3)
+      '@azure/msal-browser':
+        specifier: ^4.21.1
+        version: 4.21.1
+      '@azure/msal-react':
+        specifier: ^3.0.19
+        version: 3.0.19(@azure/msal-browser@4.21.1)(react@19.1.0)
       '@hookform/resolvers':
         specifier: ^5.2.1
         version: 5.2.1(react-hook-form@7.62.0(react@19.1.0))
@@ -213,6 +219,21 @@ packages:
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}
+
+  '@azure/msal-browser@4.21.1':
+    resolution: {integrity: sha512-qGtzX3HJfJsOVeDcVrFZAYZoxLRjrW2lXzXqijgiBA5EtM9ud7F/EYgKKQ9TJU/WtE46szuZtQZx5vD4pEiknA==}
+    engines: {node: '>=0.8.0'}
+
+  '@azure/msal-common@15.12.0':
+    resolution: {integrity: sha512-4ucXbjVw8KJ5QBgnGJUeA07c8iznwlk5ioHIhI4ASXcXgcf2yRFhWzYOyWg/cI49LC9ekpFJeQtO3zjDTbl6TQ==}
+    engines: {node: '>=0.8.0'}
+
+  '@azure/msal-react@3.0.19':
+    resolution: {integrity: sha512-309fo4+V0vUlZolMDv2w+JlZBH1Fr2/vpPtMbZNhGYjKrexEBWNx3uAPVCa4Vyf/egWxXYTXAcbRhd6+Wlp8Lg==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      '@azure/msal-browser': ^4.21.0
+      react: ^16.8.0 || ^17 || ^18 || ^19
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -3719,6 +3740,17 @@ snapshots:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
       lru-cache: 10.4.3
+
+  '@azure/msal-browser@4.21.1':
+    dependencies:
+      '@azure/msal-common': 15.12.0
+
+  '@azure/msal-common@15.12.0': {}
+
+  '@azure/msal-react@3.0.19(@azure/msal-browser@4.21.1)(react@19.1.0)':
+    dependencies:
+      '@azure/msal-browser': 4.21.1
+      react: 19.1.0
 
   '@babel/code-frame@7.27.1':
     dependencies:

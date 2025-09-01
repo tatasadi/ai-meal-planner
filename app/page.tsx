@@ -1,11 +1,14 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Header } from "@/components/layout/header"
+import { AuthButton } from "@/components/auth/auth-button"
 import { Sparkles, ShoppingCart, Zap, Heart } from "lucide-react"
 
 export default function Home() {
   return (
     <div className="min-h-screen gradient-bg">
+      <Header />
       <div className="container mx-auto px-4 py-16">
         <main className="text-center space-y-16 max-w-6xl mx-auto">
           {/* Hero Section */}
@@ -30,12 +33,13 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/onboarding">
-                <Button size="lg" className="px-8 h-12 text-lg shadow-lg hover:shadow-xl transition-all duration-200">
-                  <Zap className="w-5 h-5 mr-2" />
-                  Start Planning
-                </Button>
-              </Link>
+              <AuthButton 
+                redirectTo="/onboarding"
+                className="px-8 h-12 text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Start Planning
+              </AuthButton>
               
               <Button variant="outline" size="lg" className="px-8 h-12 text-lg">
                 Watch Demo

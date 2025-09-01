@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 import { MealCard } from "@/components/meal/meal-card"
 import { MealDetailsDialog } from "@/components/meal/meal-details-dialog"
 import { ChatInterface } from "@/components/chat/chat-interface"
@@ -169,8 +170,9 @@ export default function DashboardPage() {
   const totalDays = Object.keys(groupedMeals).length
 
   return (
-    <PageErrorBoundary>
-      <div className="min-h-screen gradient-bg">
+    <ProtectedRoute>
+      <PageErrorBoundary>
+        <div className="min-h-screen gradient-bg">
         <div className="max-w-7xl mx-auto p-6">
           <header className="mb-12 animate-fade-in">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -305,8 +307,9 @@ export default function DashboardPage() {
               isRegenerating={selectedMeal ? regeneratingMealId === selectedMeal.id : false}
             />
           </ComponentErrorBoundary>
+          </div>
         </div>
-      </div>
-    </PageErrorBoundary>
+      </PageErrorBoundary>
+    </ProtectedRoute>
   )
 }

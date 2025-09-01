@@ -1,5 +1,6 @@
 "use client"
 
+import { ProtectedRoute } from "@/components/auth/protected-route"
 import { OnboardingForm } from "@/components/forms/onboarding-form"
 
 export default function OnboardingPage() {
@@ -9,19 +10,21 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl animate-fade-in">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Let's Get Started
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Tell us about yourself to create your personalized meal plan
-          </p>
+    <ProtectedRoute>
+      <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl animate-fade-in">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Let's Get Started
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Tell us about yourself to create your personalized meal plan
+            </p>
+          </div>
+          
+          <OnboardingForm onComplete={handleComplete} />
         </div>
-        
-        <OnboardingForm onComplete={handleComplete} />
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }
