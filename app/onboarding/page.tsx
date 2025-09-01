@@ -11,7 +11,7 @@ export default function OnboardingPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="min-h-[calc(100vh-4rem)] gradient-bg flex items-center justify-center p-4">
         <div className="w-full max-w-2xl animate-fade-in">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">

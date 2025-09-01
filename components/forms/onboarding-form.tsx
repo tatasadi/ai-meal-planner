@@ -16,21 +16,18 @@ import { sanitizeUserProfile } from "@/lib/sanitization"
 import type { UserProfile } from "@/lib/types"
 
 const basicInfoSchema = z.object({
-  age: z.number({
-    required_error: "Age is required",
-    invalid_type_error: "Please enter a valid age",
-  }).min(13, "Age must be at least 13").max(120, "Age must be less than 120"),
+  age: z.string().min(1, "Age is required").pipe(
+    z.coerce.number().min(13, "Age must be at least 13").max(120, "Age must be less than 120")
+  ),
   gender: z.enum(["male", "female", "other"], {
     required_error: "Please select a gender",
   }),
-  height: z.number({
-    required_error: "Height is required",
-    invalid_type_error: "Please enter a valid height",
-  }).min(100, "Height must be at least 100cm").max(250, "Height must be less than 250cm"),
-  weight: z.number({
-    required_error: "Weight is required", 
-    invalid_type_error: "Please enter a valid weight",
-  }).min(30, "Weight must be at least 30kg").max(300, "Weight must be less than 300kg"),
+  height: z.string().min(1, "Height is required").pipe(
+    z.coerce.number().min(100, "Height must be at least 100cm").max(250, "Height must be less than 250cm")
+  ),
+  weight: z.string().min(1, "Weight is required").pipe(
+    z.coerce.number().min(30, "Weight must be at least 30kg").max(300, "Weight must be less than 300kg")
+  ),
   activityLevel: z.enum([
     "sedentary",
     "light",
@@ -188,9 +185,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               <Input
                 id="age"
                 type="number"
-                {...basicForm.register("age", {
-                  valueAsNumber: true,
-                })}
+                {...basicForm.register("age")}
               />
               {basicForm.formState.errors.age && (
                 <p className="text-sm text-destructive">
@@ -226,7 +221,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               <Input
                 id="height"
                 type="number"
-                {...basicForm.register("height", { valueAsNumber: true })}
+                {...basicForm.register("height")}
               />
               {basicForm.formState.errors.height && (
                 <p className="text-sm text-destructive">
@@ -240,7 +235,7 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
               <Input
                 id="weight"
                 type="number"
-                {...basicForm.register("weight", { valueAsNumber: true })}
+                {...basicForm.register("weight")}
               />
               {basicForm.formState.errors.weight && (
                 <p className="text-sm text-destructive">

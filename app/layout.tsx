@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Toaster } from "react-hot-toast"
 import { CriticalErrorBoundary } from "@/components/error/error-boundary"
 import { AuthProvider } from "@/components/auth/auth-provider"
+import { Header } from "@/components/layout/header"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -26,12 +27,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="min-h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-full`}
       >
         <AuthProvider>
           <CriticalErrorBoundary>
+            <Header />
             {children}
           </CriticalErrorBoundary>
         </AuthProvider>
