@@ -51,20 +51,20 @@ A web application that uses generative AI to help users create personalized meal
 
 ### Backend & Azure Services
 
-- **Hosting**: Azure Static Web Apps
+- **Hosting**: Azure Static Web Apps (frontend + API)
 - **Database**: Azure Cosmos DB (NoSQL) with indexing on userId, mealPlanId
-- **API**: Azure Functions (serverless)
+- **API**: Next.js API Routes deployed as Static Web App APIs
 - **Authentication**: Azure AD B2C or Microsoft Entra External ID
 - **AI Service**: Azure OpenAI Service (GPT-4o or GPT-4)
 - **Secrets**: Azure Key Vault
 - **Monitoring**: Azure Application Insights
-- **Storage**: Azure Storage (if needed for file uploads)
 
 ### Azure Integration Libraries
 
 - **Authentication**: @azure/msal-react
-- **Database**: @azure/cosmos
-- **HTTP Client**: Axios or fetch with React Query
+- **Database**: @azure/cosmos (for API routes)
+- **HTTP Client**: Native fetch with React Query
+- **Static Web Apps**: Built-in API functionality
 
 ### Development Tools
 
@@ -109,14 +109,15 @@ A web application that uses generative AI to help users create personalized meal
 ### Phase 4: Production Ready
 
 21. Create Azure Bicep templates for infrastructure provisioning
-22. Set up Azure authentication with security headers
-23. Configure Cosmos DB for data persistence
-24. Implement user profile management
-25. Set up CI/CD pipeline with automated testing
-26. Configure Application Insights monitoring
-27. Implement backup and recovery strategy
-28. Deploy to Azure Static Web Apps with staging environment
-29. Performance optimization and accessibility audit
+22. Set up GitHub Actions for Static Web App deployment
+23. Set up Azure authentication with security headers
+24. Configure Cosmos DB for data persistence
+25. Implement user profile management
+26. Set up CI/CD pipeline with automated testing
+27. Configure Application Insights monitoring
+28. Implement backup and recovery strategy
+29. Deploy to Azure Static Web Apps with staging environment
+30. Performance optimization and accessibility audit
 
 ## Data Models
 

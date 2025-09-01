@@ -36,7 +36,6 @@ param resourceSuffix string = ''
 var actualSuffix = !empty(resourceSuffix) ? resourceSuffix : substring(uniqueString(resourceGroup().id), 0, 4)
 var resourcePrefix = '${appName}-${environment}-${actualSuffix}'
 var cleanAppName = replace(appName, '-', '')
-var storageAccountName = substring('${cleanAppName}${environment}${actualSuffix}st', 0, min(length('${cleanAppName}${environment}${actualSuffix}st'), 24))
 var keyVaultName = substring('${cleanAppName}${environment}${actualSuffix}kv', 0, min(length('${cleanAppName}${environment}${actualSuffix}kv'), 24))
 var tags = {
   application: appName
@@ -278,105 +277,9 @@ resource gpt4oDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-
   }
 }
 
-// Storage Account for Azure Functions
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: storageAccountName
-  location: location
-  tags: tags
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-  properties: {
-    supportsHttpsTrafficOnly: true
-    minimumTlsVersion: 'TLS1_2'
-  }
-}
+// Function App removed - using Static Web App APIs instead
 
-// App Service Plan for Azure Functions
-resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
-  name: '${resourcePrefix}-plan'
-  location: location
-  tags: tags
-  sku: {
-    name: environment == 'prod' ? 'Y1' : 'Y1'
-    tier: 'Dynamic'
-  }
-  properties: {
-    reserved: false
-  }
-}
-
-// Azure Functions App
-resource functionApp 'Microsoft.Web/sites@2023-01-01' = {
-  name: '${resourcePrefix}-func'
-  location: location
-  tags: tags
-  kind: 'functionapp'
-  properties: {
-    serverFarmId: appServicePlan.id
-    httpsOnly: true
-    siteConfig: {
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${az.environment().suffixes.storage}'
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'node'
-        }
-        {
-          name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '~18'
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsights.properties.ConnectionString
-        }
-        {
-          name: 'COSMOS_DB_ENDPOINT'
-          value: cosmosDbAccount.properties.documentEndpoint
-        }
-        {
-          name: 'COSMOS_DB_KEY'
-          value: cosmosDbAccount.listKeys().primaryMasterKey
-        }
-        {
-          name: 'COSMOS_DB_DATABASE_NAME'
-          value: cosmosDb.name
-        }
-        {
-          name: 'AZURE_OPENAI_ENDPOINT'
-          value: openAiService.properties.endpoint
-        }
-        {
-          name: 'AZURE_OPENAI_API_KEY'
-          value: openAiService.listKeys().key1
-        }
-        {
-          name: 'AZURE_OPENAI_DEPLOYMENT_NAME'
-          value: gpt4oDeployment.name
-        }
-      ]
-      cors: {
-        allowedOrigins: [
-          'https://${staticWebApp.properties.defaultHostname}'
-          'http://localhost:3000'
-        ]
-        supportCredentials: false
-      }
-      ftpsState: 'FtpsOnly'
-      minTlsVersion: '1.2'
-    }
-  }
-}
-
-// Static Web App (without GitHub integration - use custom GitHub Actions)
+// Static Web App with built-in API support
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   name: '${resourcePrefix}-web'
   location: 'Central US' // Static Web Apps have limited locations
@@ -386,10 +289,10 @@ resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
     tier: 'Free'
   }
   properties: {
-    // No automatic GitHub integration - deploy via custom GitHub Actions
+    // Deploy via custom GitHub Actions
     buildProperties: {
       appLocation: '/'
-      apiLocation: ''  // API will be handled by separate Function App
+      apiLocation: 'api'  // Next.js API routes will be deployed as Static Web App APIs
       outputLocation: 'out'
     }
   }
@@ -424,7 +327,6 @@ resource appInsightsConnectionStringSecret 'Microsoft.KeyVault/vaults/secrets@20
 output staticWebAppUrl string = 'https://${staticWebApp.properties.defaultHostname}'
 output staticWebAppApiUrl string = 'https://${staticWebApp.properties.defaultHostname}/api'
 output staticWebAppDeploymentToken string = staticWebApp.listSecrets().properties.apiKey
-output functionAppUrl string = 'https://${functionApp.properties.defaultHostName}'
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
 output openAiEndpoint string = openAiService.properties.endpoint
 output keyVaultUri string = keyVault.properties.vaultUri
