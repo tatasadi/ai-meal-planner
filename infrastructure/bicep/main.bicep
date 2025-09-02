@@ -156,8 +156,15 @@ resource userProfilesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
     resource: {
       id: 'user-profiles'
       partitionKey: {
-        paths: ['/userId']
+        paths: ['/id']
         kind: 'Hash'
+      }
+      uniqueKeyPolicy: {
+        uniqueKeys: [
+          {
+            paths: ['/email']
+          }
+        ]
       }
       indexingPolicy: {
         automatic: true
@@ -197,10 +204,19 @@ resource mealPlansContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/
           {
             path: '/*'
           }
+          {
+            path: '/createdAt/?'
+          }
+          {
+            path: '/updatedAt/?'
+          }
         ]
         excludedPaths: [
           {
             path: '/"_etag"/?'
+          }
+          {
+            path: '/meals/*/ingredients/*'
           }
         ]
       }
@@ -228,10 +244,62 @@ resource chatMessagesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
           {
             path: '/*'
           }
+          {
+            path: '/mealPlanId/?'
+          }
+          {
+            path: '/timestamp/?'
+          }
         ]
         excludedPaths: [
           {
             path: '/"_etag"/?'
+          }
+          {
+            path: '/content/*'
+          }
+          {
+            path: '/metadata/*'
+          }
+        ]
+      }
+    }
+    options: environment == 'dev' ? {} : {
+      throughput: 400
+    }
+  }
+}
+
+resource groceryListsContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-11-15' = {
+  parent: cosmosDb
+  name: 'grocery-lists'
+  properties: {
+    resource: {
+      id: 'grocery-lists'
+      partitionKey: {
+        paths: ['/userId']
+        kind: 'Hash'
+      }
+      indexingPolicy: {
+        automatic: true
+        indexingMode: 'consistent'
+        includedPaths: [
+          {
+            path: '/*'
+          }
+          {
+            path: '/mealPlanId/?'
+          }
+          {
+            path: '/createdAt/?'
+          }
+        ]
+        excludedPaths: [
+          {
+            path: '/"_etag"/?'
+          }
+          {
+            path: '/items/*'
           }
         ]
       }

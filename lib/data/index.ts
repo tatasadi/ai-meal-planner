@@ -2,6 +2,7 @@
 export { userProfilesDAO, UserProfilesDAO } from './user-profiles'
 export { mealPlansDAO, MealPlansDAO } from './meal-plans'
 export { chatMessagesDAO, ChatMessagesDAO } from './chat-messages'
+export { groceryListsDAO, GroceryListsDAO } from './grocery-lists'
 
 // Cosmos DB utilities
 export { 

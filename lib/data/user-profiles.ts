@@ -27,13 +27,13 @@ export class UserProfilesDAO {
   /**
    * Create a new user profile
    */
-  async createUserProfile(profile: Omit<UserProfile, 'id'>): Promise<UserProfile> {
+  async createUserProfile(profile: Omit<UserProfile, 'id'> | UserProfile): Promise<UserProfile> {
     await this.initialize()
     
     const container = getContainer('userProfiles')
     const newProfile: UserProfile = {
       ...profile,
-      id: uuidv4()
+      id: 'id' in profile && profile.id ? profile.id : uuidv4()
     }
 
     try {
@@ -41,12 +41,31 @@ export class UserProfilesDAO {
       if (!resource) {
         throw new Error('Failed to create user profile')
       }
-      return resource as UserProfile
+      return resource as unknown as UserProfile
     } catch (error: any) {
       if (error.code === 409) {
         throw new Error('User profile already exists with this email')
       }
       throw new Error(`Failed to create user profile: ${error.message}`)
+    }
+  }
+
+  /**
+   * Create or replace user profile (upsert operation)
+   */
+  async upsertUserProfile(profile: UserProfile): Promise<UserProfile> {
+    await this.initialize()
+    
+    const container = getContainer('userProfiles')
+
+    try {
+      const { resource } = await container.items.upsert(profile)
+      if (!resource) {
+        throw new Error('Failed to upsert user profile')
+      }
+      return resource as unknown as UserProfile
+    } catch (error: any) {
+      throw new Error(`Failed to upsert user profile: ${error.message}`)
     }
   }
 
@@ -59,12 +78,16 @@ export class UserProfilesDAO {
     const container = getContainer('userProfiles')
     
     try {
-      const { resource } = await container.item(userId, userId).read<UserProfile>()
-      return resource || null
-    } catch (error: any) {
-      if (error.code === 404) {
-        return null
+      const querySpec = {
+        query: 'SELECT * FROM c WHERE c.id = @id',
+        parameters: [
+          { name: '@id', value: userId }
+        ]
       }
+      
+      const { resources } = await container.items.query<UserProfile>(querySpec).fetchAll()
+      return resources.length > 0 ? resources[0] : null
+    } catch (error: any) {
       throw new Error(`Failed to get user profile: ${error.message}`)
     }
   }
@@ -118,7 +141,7 @@ export class UserProfilesDAO {
       if (!resource) {
         throw new Error('Failed to update user profile')
       }
-      return resource as UserProfile
+      return resource as unknown as UserProfile
     } catch (error: any) {
       throw new Error(`Failed to update user profile: ${error.message}`)
     }

@@ -113,7 +113,7 @@ function getContainerConfig(containerId: string) {
             { path: '/mealPlanId/?' },
             { path: '/createdAt/?' }
           ],
-          excludedPaths: [{ path: '/items/*/name/*' }]
+          excludedPaths: [{ path: '/items/*' }]
         }
       }
     default:

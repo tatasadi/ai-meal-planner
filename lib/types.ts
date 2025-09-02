@@ -29,6 +29,7 @@ export interface MealPlan {
   duration: number // days
   meals: Meal[]
   shoppingList: ShoppingCategory[] // AI-generated categorized shopping list
+  groceryListId?: string // Reference to the interactive grocery list
   createdAt: Date
   updatedAt: Date
 }

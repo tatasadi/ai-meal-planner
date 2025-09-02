@@ -3,30 +3,13 @@ import { z } from "zod"
 import { regenerateMeal, regenerateShoppingList } from "@/lib/meal-generation"
 import { UserProfileSchema } from "@/lib/schemas"
 import { sanitizeUserProfile } from "@/lib/sanitization"
+import { mealPlansDAO, userProfilesDAO } from "@/lib/data"
 
 // Schema for regenerate meal request
 const RegenerateMealSchema = z.object({
-  meal: z.object({
-    id: z.string(),
-    day: z.number(),
-    type: z.enum(["breakfast", "lunch", "dinner"]),
-    name: z.string(),
-    description: z.string(),
-    ingredients: z.array(z.string()),
-    estimatedCalories: z.number(),
-    prepTime: z.number(),
-  }),
-  allMeals: z.array(z.object({
-    id: z.string(),
-    day: z.number(),
-    type: z.enum(["breakfast", "lunch", "dinner"]),
-    name: z.string(),
-    description: z.string(),
-    ingredients: z.array(z.string()),
-    estimatedCalories: z.number(),
-    prepTime: z.number(),
-  })),
-  userProfile: UserProfileSchema,
+  mealPlanId: z.string(),
+  userId: z.string(),
+  mealId: z.string(),
   context: z.string().optional(),
 })
 
@@ -46,32 +29,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { meal, allMeals, userProfile, context } = validationResult.data
+    const { mealPlanId, userId, mealId, context } = validationResult.data
 
-    // Create a complete UserProfile with required fields
-    const completeProfile = {
-      id: 'temp-user',
-      email: 'temp@example.com',
-      ...userProfile,
+    // Get the existing meal plan from database
+    const mealPlan = await mealPlansDAO.getMealPlan(mealPlanId, userId)
+    if (!mealPlan) {
+      return NextResponse.json(
+        { error: "Meal plan not found" },
+        { status: 404 }
+      )
     }
 
-    // Sanitize user input before processing
-    const sanitizedProfile = sanitizeUserProfile(completeProfile)
+    // Find the meal to regenerate
+    const mealToRegenerate = mealPlan.meals.find(m => m.id === mealId)
+    if (!mealToRegenerate) {
+      return NextResponse.json(
+        { error: "Meal not found" },
+        { status: 404 }
+      )
+    }
+
+    // Get user profile from database
+    const userProfile = await userProfilesDAO.getUserProfile(userId)
+    if (!userProfile) {
+      return NextResponse.json(
+        { error: "User profile not found" },
+        { status: 404 }
+      )
+    }
+
+    // Sanitize user profile
+    const sanitizedProfile = sanitizeUserProfile(userProfile)
 
     // Regenerate the meal
-    const newMeal = await regenerateMeal(meal, sanitizedProfile, context)
+    const newMeal = await regenerateMeal(mealToRegenerate, sanitizedProfile, context)
 
-    // Update the meal in the allMeals array
-    const updatedMeals = allMeals.map(m => 
-      m.id === meal.id ? newMeal : m
-    )
+    // Update the meal in the meal plan
+    const updatedMealPlan = await mealPlansDAO.replaceMeal(mealPlanId, userId, mealId, newMeal)
 
     // Regenerate shopping list with updated meals
-    const newShoppingList = await regenerateShoppingList(updatedMeals, sanitizedProfile)
+    const newShoppingList = await regenerateShoppingList(updatedMealPlan.meals, sanitizedProfile)
+
+    // Update meal plan with new shopping list
+    const finalMealPlan = await mealPlansDAO.updateMealPlan(mealPlanId, userId, {
+      shoppingList: newShoppingList
+    })
 
     return NextResponse.json({
       meal: newMeal,
       shoppingList: newShoppingList,
+      mealPlan: finalMealPlan
     })
 
   } catch (error) {

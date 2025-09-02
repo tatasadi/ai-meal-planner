@@ -3,22 +3,22 @@ import { NextRequest } from "next/server"
 import { model } from "@/lib/azure-openai"
 import { sanitizeChatMessage } from "@/lib/sanitization"
 import { handleAPIError, ErrorType } from "@/lib/error-handling"
+import { chatMessagesDAO, mealPlansDAO, userProfilesDAO } from "@/lib/data"
 import type { ChatMessage, MealPlan, UserProfile } from "@/lib/types"
 
 export const runtime = "edge"
 
 interface ChatRequest {
   message: string
-  mealPlan: MealPlan
-  userProfile: UserProfile
-  chatHistory: ChatMessage[]
+  mealPlanId: string
+  userId: string
 }
 
 export async function POST(req: NextRequest) {
   try {
     console.log("Chat API called")
     const body = await req.json() as ChatRequest
-    const { message, mealPlan, userProfile, chatHistory } = body
+    const { message, mealPlanId, userId } = body
     console.log("Received message:", message)
 
     // Sanitize the user message
@@ -27,6 +27,29 @@ export async function POST(req: NextRequest) {
       console.log("Message sanitization failed")
       return new Response("Invalid message content", { status: 400 })
     }
+
+    // Get meal plan from database
+    const mealPlan = await mealPlansDAO.getMealPlan(mealPlanId, userId)
+    if (!mealPlan) {
+      return new Response("Meal plan not found", { status: 404 })
+    }
+
+    // Get user profile from database
+    const userProfile = await userProfilesDAO.getUserProfile(userId)
+    if (!userProfile) {
+      return new Response("User profile not found", { status: 404 })
+    }
+
+    // Get recent chat history from database
+    const chatHistory = await chatMessagesDAO.getRecentMealPlanChatMessages(mealPlanId, userId, 6)
+
+    // Save user message to database
+    await chatMessagesDAO.createChatMessage({
+      userId,
+      mealPlanId,
+      role: "user",
+      content: sanitizedMessage
+    })
 
     // Build context about the current meal plan
     const mealPlanContext = `
@@ -94,6 +117,20 @@ User's request: ${sanitizedMessage}`
       ],
       temperature: 0.7,
       maxTokens: 500,
+      onFinish: async (event) => {
+        // Save AI response to database when streaming is complete
+        try {
+          await chatMessagesDAO.createChatMessage({
+            userId,
+            mealPlanId,
+            role: "assistant",
+            content: event.text
+          })
+          console.log("AI response saved to database")
+        } catch (error) {
+          console.error("Failed to save AI response:", error)
+        }
+      }
     })
 
     console.log("AI generation successful, returning stream")

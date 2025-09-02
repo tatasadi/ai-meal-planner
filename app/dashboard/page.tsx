@@ -13,6 +13,7 @@ import { RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import { useMealPlanStore } from "@/store"
 import { useMealGeneration } from "@/hooks/use-meal-generation"
 import { useChatWithActions } from "@/hooks/use-chat-with-actions"
+import { useDataSync } from "@/hooks/use-data-sync"
 import { LoadingState } from "@/components/ui/loading-state"
 import { PageErrorBoundary, ComponentErrorBoundary } from "@/components/error/error-boundary"
 import type { Meal, ChatMessage } from "@/lib/types"
@@ -22,6 +23,14 @@ export default function DashboardPage() {
   const router = useRouter()
   const { currentMealPlan, userProfile, updateMealPlan, hasHydrated } = useMealPlanStore()
   const { regenerateMeal, generateMealPlan, isGeneratingMealPlan, regeneratingMealId, error } = useMealGeneration()
+  const { 
+    isLoading: isLoadingData, 
+    hasLoadedInitialData, 
+    needsOnboarding, 
+    hasMealPlan,
+    error: dataError,
+    refreshData 
+  } = useDataSync()
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null)
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false)
   const [currentDay, setCurrentDay] = useState(1)
@@ -79,29 +88,41 @@ export default function DashboardPage() {
   const groceryItems = generateGroceryList()
   
   useEffect(() => {
-    // Only redirect after hydration is complete to avoid premature redirects
-    if (hasHydrated && !currentMealPlan && !userProfile) {
+    // Redirect to onboarding if user needs to complete their profile
+    if (needsOnboarding) {
       router.push('/onboarding')
     }
-  }, [currentMealPlan, userProfile, router, hasHydrated])
+  }, [needsOnboarding, router])
+  
+  // Show loading state while loading data or generating meal plan
+  if (isLoadingData && !hasLoadedInitialData) {
+    return <LoadingState message="Loading your meal plan data..." />
+  }
   
   if (isGeneratingMealPlan) {
     return <LoadingState message="Generating your personalized meal plan..." />
   }
   
-  if (error) {
+  if (error || dataError) {
+    const displayError = error || dataError
     return (
       <div className="min-h-screen gradient-bg flex items-center justify-center">
         <Card className="card-elevated border-0 shadow-xl max-w-md">
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-            <p className="text-muted-foreground mb-6">{error}</p>
+            <p className="text-muted-foreground mb-6">{displayError}</p>
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => router.push('/onboarding')}>
                 Start Over
               </Button>
-              <Button onClick={handleRegenerateAll}>
+              <Button onClick={() => {
+                if (dataError) {
+                  refreshData()
+                } else {
+                  handleRegenerateAll()
+                }
+              }}>
                 Try Again
               </Button>
             </div>

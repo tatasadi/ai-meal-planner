@@ -9,10 +9,12 @@ import {
   isValidationError,
 } from "@/lib/api-client"
 import { handleClientError, logger, monitorPerformance } from "@/lib/error-handling"
+import { useAuth } from "./use-auth"
 import type { UserProfile, Meal } from "@/lib/types"
 
 export function useMealGeneration() {
   const router = useRouter()
+  const { user, isAuthenticated } = useAuth()
   const {
     setCurrentMealPlan,
     setGeneratingMealPlan,
@@ -25,6 +27,20 @@ export function useMealGeneration() {
 
   const generateMealPlan = useCallback(
     async (profile: UserProfile) => {
+      if (!isAuthenticated || !user) {
+        const error = new Error("Authentication required")
+        handleClientError(error, {
+          operation: "meal-plan-generation",
+          userId: profile.id,
+          userProfile: {
+            age: profile.age,
+            goals: profile.goals,
+            dietaryRestrictions: profile.dietaryRestrictions,
+          }
+        })
+        return
+      }
+
       const performance = monitorPerformance("client-meal-plan-generation")
       
       setError(null)
@@ -32,23 +48,29 @@ export function useMealGeneration() {
 
       try {
         logger.info("Starting meal plan generation", { 
-          userId: profile.id, 
+          userId: user.id, 
           age: profile.age, 
           goals: profile.goals 
         })
         
-        const mealPlan = await mealPlanAPI.generateMealPlan(profile)
+        const authHeaders = {
+          'x-user-id': user.id,
+          'x-user-email': user.email,
+          'x-user-name': user.name,
+        }
+        
+        const mealPlan = await mealPlanAPI.generateMealPlan(profile, authHeaders)
         
         setCurrentMealPlan(mealPlan)
         
         const duration = performance.finish({ 
-          userId: profile.id, 
+          userId: user.id, 
           mealPlanId: mealPlan.id,
           mealCount: mealPlan.meals.length
         })
         
         logger.info("Meal plan generation completed successfully", {
-          userId: profile.id,
+          userId: user.id,
           mealPlanId: mealPlan.id,
           duration: `${duration}ms`,
           mealCount: mealPlan.meals.length
@@ -57,11 +79,11 @@ export function useMealGeneration() {
         toast.success("Meal plan generated successfully!")
         router.push("/dashboard")
       } catch (error) {
-        performance.finish({ userId: profile.id, error: true })
+        performance.finish({ userId: user.id, error: true })
         
         const appError = handleClientError(error, {
           operation: "meal-plan-generation",
-          userId: profile.id,
+          userId: user.id,
           userProfile: {
             age: profile.age,
             goals: profile.goals,
@@ -75,7 +97,7 @@ export function useMealGeneration() {
         setGeneratingMealPlan(false)
       }
     },
-    [setCurrentMealPlan, setGeneratingMealPlan, setError, router]
+    [setCurrentMealPlan, setGeneratingMealPlan, setError, router, isAuthenticated, user]
   )
 
   const regenerateMeal = useCallback(

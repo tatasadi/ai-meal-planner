@@ -11,6 +11,13 @@ export class APIError extends Error {
   }
 }
 
+// Authentication headers interface
+export interface AuthHeaders {
+  'x-user-id': string
+  'x-user-email': string
+  'x-user-name': string
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({
@@ -28,11 +35,12 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 export const mealPlanAPI = {
-  async generateMealPlan(userProfile: UserProfile): Promise<MealPlan> {
+  async generateMealPlan(userProfile: UserProfile, authHeaders: AuthHeaders): Promise<MealPlan> {
     const response = await fetch("/api/meal-plan/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
       },
       body: JSON.stringify({
         duration: 3, // Fixed to 3 days for MVP

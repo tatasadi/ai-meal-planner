@@ -5,6 +5,7 @@ import { model } from "@/lib/azure-openai"
 import { sanitizeChatMessage } from "@/lib/sanitization"
 import { handleAPIError, ErrorType } from "@/lib/error-handling"
 import { modifyMeal, regenerateMeal, regenerateShoppingList } from "@/lib/meal-generation"
+import { mealPlansDAO, userProfilesDAO } from "@/lib/data"
 import type { MealPlan, UserProfile, Meal } from "@/lib/types"
 
 export const runtime = "edge"
@@ -21,20 +22,32 @@ const ModificationActionSchema = z.object({
 
 interface ModifyRequest {
   message: string
-  mealPlan: MealPlan
-  userProfile: UserProfile
+  mealPlanId: string
+  userId: string
   aiChatResponse?: string
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as ModifyRequest
-    const { message, mealPlan, userProfile, aiChatResponse } = body
+    const { message, mealPlanId, userId, aiChatResponse } = body
 
     // Sanitize the user message
     const sanitizedMessage = sanitizeChatMessage(message)
     if (!sanitizedMessage) {
       return NextResponse.json({ error: "Invalid message content" }, { status: 400 })
+    }
+
+    // Get meal plan from database
+    const mealPlan = await mealPlansDAO.getMealPlan(mealPlanId, userId)
+    if (!mealPlan) {
+      return NextResponse.json({ error: "Meal plan not found" }, { status: 404 })
+    }
+
+    // Get user profile from database
+    const userProfile = await userProfilesDAO.getUserProfile(userId)
+    if (!userProfile) {
+      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
     }
 
     // Build context about the current meal plan
@@ -121,8 +134,16 @@ Analyze this message and determine the appropriate action.`,
 
     // Generate new shopping list if meals were modified
     let newShoppingList = mealPlan.shoppingList
+    let savedMealPlan = mealPlan
+    
     if (updatedMeal) {
       newShoppingList = await regenerateShoppingList(updatedMeals, userProfile)
+      
+      // Update meal plan in database
+      savedMealPlan = await mealPlansDAO.updateMealPlan(mealPlanId, userId, {
+        meals: updatedMeals,
+        shoppingList: newShoppingList
+      })
     }
 
     return NextResponse.json({
@@ -130,6 +151,7 @@ Analyze this message and determine the appropriate action.`,
       targetMealId: updatedMeal?.id,
       modificationReason,
       updatedMeal,
+      mealPlan: savedMealPlan,
       updatedMeals: updatedMeal ? updatedMeals : undefined,
       updatedShoppingList: updatedMeal ? newShoppingList : undefined,
     })

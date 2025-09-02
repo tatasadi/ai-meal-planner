@@ -125,7 +125,16 @@ class ConsoleLogger implements Logger {
       context: context || {},
     }
 
-    console[level as keyof Console](JSON.stringify(logEntry, null, 2))
+    const logString = JSON.stringify(logEntry, null, 2)
+    if (level === 'error') {
+      console.error(logString)
+    } else if (level === 'warn') {
+      console.warn(logString)
+    } else if (level === 'info') {
+      console.info(logString)
+    } else {
+      console.log(logString)
+    }
   }
 
   error(error: Error | AppError, context?: Record<string, any>): void {

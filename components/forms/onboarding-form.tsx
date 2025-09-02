@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { toast } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,31 +13,41 @@ import { Combobox, ComboboxOption } from "@/components/ui/combobox"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useMealPlanStore } from "@/store"
 import { useMealGeneration } from "@/hooks/use-meal-generation"
+import { useAuth } from "@/hooks/use-auth"
+import { useAuthFetch } from "@/hooks/use-auth-fetch"
 import { sanitizeUserProfile } from "@/lib/sanitization"
 import type { UserProfile } from "@/lib/types"
 
 const basicInfoSchema = z.object({
-  age: z.string().min(1, "Age is required").pipe(
-    z.coerce.number().min(13, "Age must be at least 13").max(120, "Age must be less than 120")
-  ),
-  gender: z.enum(["male", "female", "other"], {
-    required_error: "Please select a gender",
+  age: z.string().min(1, "Age is required").transform((val) => {
+    const parsed = parseInt(val, 10)
+    if (isNaN(parsed)) throw new Error("Age must be a number")
+    if (parsed < 13) throw new Error("Age must be at least 13")
+    if (parsed > 120) throw new Error("Age must be less than 120")
+    return parsed
   }),
-  height: z.string().min(1, "Height is required").pipe(
-    z.coerce.number().min(100, "Height must be at least 100cm").max(250, "Height must be less than 250cm")
-  ),
-  weight: z.string().min(1, "Weight is required").pipe(
-    z.coerce.number().min(30, "Weight must be at least 30kg").max(300, "Weight must be less than 300kg")
-  ),
+  gender: z.enum(["male", "female", "other"]).refine(() => true, { message: "Please select a gender" }),
+  height: z.string().min(1, "Height is required").transform((val) => {
+    const parsed = parseInt(val, 10)
+    if (isNaN(parsed)) throw new Error("Height must be a number")
+    if (parsed < 100) throw new Error("Height must be at least 100cm")
+    if (parsed > 250) throw new Error("Height must be less than 250cm")
+    return parsed
+  }),
+  weight: z.string().min(1, "Weight is required").transform((val) => {
+    const parsed = parseInt(val, 10)
+    if (isNaN(parsed)) throw new Error("Weight must be a number")
+    if (parsed < 30) throw new Error("Weight must be at least 30kg")
+    if (parsed > 300) throw new Error("Weight must be less than 300kg")
+    return parsed
+  }),
   activityLevel: z.enum([
     "sedentary",
     "light",
     "moderate",
     "active",
     "very_active",
-  ], {
-    required_error: "Please select an activity level",
-  }),
+  ]).refine(() => true, { message: "Please select an activity level" }),
 })
 
 const preferencesSchema = z.object({
@@ -50,6 +61,7 @@ type PreferencesFormData = z.infer<typeof preferencesSchema>
 
 interface OnboardingFormProps {
   onComplete?: () => void
+  existingProfile?: UserProfile | null
 }
 
 const genderOptions: ComboboxOption[] = [
@@ -73,13 +85,31 @@ const goalsOptions: ComboboxOption[] = [
   { value: "muscle_gain", label: "Muscle Gain" },
 ]
 
-export function OnboardingForm({ onComplete }: OnboardingFormProps) {
+export function OnboardingForm({ onComplete, existingProfile }: OnboardingFormProps) {
   const [step, setStep] = useState(1)
   const [basicInfo, setBasicInfo] = useState<BasicInfoFormData | null>(null)
   const { setUserProfile } = useMealPlanStore()
   const { generateMealPlan, isGeneratingMealPlan } = useMealGeneration()
+  const { user, isAuthenticated } = useAuth()
+  const { authFetch } = useAuthFetch()
   const ageInputRef = useRef<HTMLInputElement>(null)
   const goalsInputRef = useRef<HTMLButtonElement>(null)
+
+  // Check authentication
+  if (!isAuthenticated || !user) {
+    return (
+      <Card className="w-full max-w-md mx-auto glass-effect border-0 shadow-xl">
+        <CardHeader>
+          <CardTitle>Authentication Required</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">
+            Please sign in with Microsoft to continue.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   // Focus age input when component mounts or step changes
   useEffect(() => {
@@ -107,11 +137,11 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const basicForm = useForm<BasicInfoFormData>({
     resolver: zodResolver(basicInfoSchema),
     defaultValues: {
-      age: undefined,
-      gender: undefined,
-      height: undefined,
-      weight: undefined,
-      activityLevel: undefined,
+      age: existingProfile?.age?.toString(),
+      gender: existingProfile?.gender,
+      height: existingProfile?.height?.toString(),
+      weight: existingProfile?.weight?.toString(),
+      activityLevel: existingProfile?.activityLevel,
     },
     mode: 'onBlur'
   })
@@ -119,10 +149,39 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
   const preferencesForm = useForm<PreferencesFormData>({
     resolver: zodResolver(preferencesSchema),
     defaultValues: {
-      dietaryRestrictions: [],
-      dislikedFoods: "",
+      goals: existingProfile?.goals,
+      dietaryRestrictions: existingProfile?.dietaryRestrictions || [],
+      dislikedFoods: existingProfile?.preferences?.dislikedFoods?.join(', ') || "",
     },
   })
+
+  // Reset forms when existing profile changes
+  useEffect(() => {
+    if (existingProfile) {
+      basicForm.reset({
+        age: existingProfile.age?.toString(),
+        gender: existingProfile.gender,
+        height: existingProfile.height?.toString(),
+        weight: existingProfile.weight?.toString(),
+        activityLevel: existingProfile.activityLevel,
+      })
+      
+      preferencesForm.reset({
+        goals: existingProfile.goals,
+        dietaryRestrictions: existingProfile.dietaryRestrictions || [],
+        dislikedFoods: existingProfile.preferences?.dislikedFoods?.join(', ') || "",
+      })
+      
+      // If user has existing profile, pre-populate basicInfo to allow direct access to step 2
+      setBasicInfo({
+        age: existingProfile.age,
+        gender: existingProfile.gender,
+        height: existingProfile.height,
+        weight: existingProfile.weight,
+        activityLevel: existingProfile.activityLevel,
+      })
+    }
+  }, [existingProfile, basicForm, preferencesForm])
 
   const onBasicInfoSubmit = (data: BasicInfoFormData) => {
     setBasicInfo(data)
@@ -140,32 +199,64 @@ export function OnboardingForm({ onComplete }: OnboardingFormProps) {
 
 
   const onPreferencesSubmit = async (data: PreferencesFormData) => {
-    if (basicInfo) {
-      const userProfile: UserProfile = {
-        id: `user-${Date.now()}`,
-        email: "temp@example.com", // TODO: Get from auth
-        age: basicInfo.age,
-        gender: basicInfo.gender,
-        height: basicInfo.height,
-        weight: basicInfo.weight,
-        activityLevel: basicInfo.activityLevel,
-        goals: data.goals,
-        dietaryRestrictions: data.dietaryRestrictions.filter(Boolean),
-        allergies: [], // TODO: Add allergies field to form
-        preferences: {
-          cuisineTypes: [], // TODO: Add cuisine preferences
-          dislikedFoods: data.dislikedFoods
-            ? data.dislikedFoods.split(",").map((s) => s.trim())
-            : [],
-          mealComplexity: "moderate", // TODO: Add complexity field
-        },
-      }
+    if (basicInfo && user) {
+      try {
+        // Create profile data (without id and email since they come from auth)
+        const profileData = {
+          age: basicInfo.age,
+          gender: basicInfo.gender,
+          height: basicInfo.height,
+          weight: basicInfo.weight,
+          activityLevel: basicInfo.activityLevel,
+          goals: data.goals,
+          dietaryRestrictions: data.dietaryRestrictions.filter(Boolean),
+          allergies: [], // TODO: Add allergies field to form
+          preferences: {
+            cuisineTypes: [], // TODO: Add cuisine preferences
+            dislikedFoods: data.dislikedFoods
+              ? data.dislikedFoods.split(",").map((s) => s.trim())
+              : [],
+            mealComplexity: "moderate", // TODO: Add complexity field
+          },
+        }
 
-      // Sanitize user input before storing
-      const sanitizedProfile = sanitizeUserProfile(userProfile)
-      setUserProfile(sanitizedProfile)
-      await generateMealPlan(sanitizedProfile)
-      onComplete?.()
+        // Create or update the user profile in the database
+        const isUpdating = !!existingProfile
+        const method = isUpdating ? 'PUT' : 'POST'
+        const response = await authFetch('/api/user/profile', {
+          method: method,
+          body: JSON.stringify(profileData)
+        })
+        
+        const savedProfile = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(savedProfile.error || `Failed to ${isUpdating ? 'update' : 'create'} user profile`)
+        }
+        
+        toast.success(`Profile ${isUpdating ? 'updated' : 'created'} successfully!`)
+
+        // Build the complete profile for local storage and meal generation
+        const userProfile: UserProfile = {
+          id: user.id,
+          email: user.email,
+          ...profileData,
+        }
+
+        // Sanitize and store locally
+        const sanitizedProfile = sanitizeUserProfile(userProfile)
+        setUserProfile(sanitizedProfile)
+        
+        // Only generate meal plan for new profiles
+        if (!isUpdating) {
+          await generateMealPlan(sanitizedProfile)
+        }
+        
+        onComplete?.()
+      } catch (error: any) {
+        console.error(`Failed to ${isUpdating ? 'update profile' : 'create profile or generate meal plan'}:`, error)
+        toast.error(`Failed to ${isUpdating ? 'update' : 'create'} profile: ${error.message}`)
+      }
     }
   }
 
